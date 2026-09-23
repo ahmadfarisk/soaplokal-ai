@@ -1,0 +1,9 @@
+
+
+
+
+# My sruff
+*.gguf
+*venv
+llm-studio-frontend/node_modules/
+llm-studio-frontend/.next/
