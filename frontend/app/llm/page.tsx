@@ -149,7 +149,7 @@ export default function StudioPage() {
           {error}
         </div>
       )}
-      <div className="flex justify-between gap-2">
+      <div className="flex justify-between gap-2 wrap">
         {/* --- Download a new model --- */}
         <section className="w-full" style={{ marginBottom: 24, padding: 16, border: "1px solid #ddd", borderRadius: 8 }}>
           <h3 style={{ marginTop: 0 }}>Download a new model from Hugging Face</h3>
@@ -214,8 +214,9 @@ export default function StudioPage() {
         </section>
       </div>
 
+
       {/* --- Chat --- */}
-      <section style={{ padding: 16, border: "1px solid #ddd", borderRadius: 8 }}>
+      <section className="p-4 border border-gray-200 rounded-lg w-full">
         <h3 style={{ marginTop: 0 }}>Chat</h3>
 
         <div

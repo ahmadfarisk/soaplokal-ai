@@ -1,0 +1,3 @@
+Frontend: 3000
+LLM Backend: 8100
+STT Backend: 8023

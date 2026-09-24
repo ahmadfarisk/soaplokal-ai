@@ -2,8 +2,16 @@
 
 
 
-# My sruff
+# My stuff
 *.gguf
-*venv
+llm-studio-backend/lai012-venv/
 frontend/node_modules/
 frontend/.next/
+.venv/
+roar.txt
+
+.env.local
+.env
+
+stt-backend/models/
+

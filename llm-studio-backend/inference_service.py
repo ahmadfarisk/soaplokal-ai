@@ -144,7 +144,7 @@ def get_loaded_models() -> dict:
 # Chat proxy
 # ---------------------------------------------------------------------------
 
-def chat(model_id: str, message: str, history: Optional[list[dict]] = None) -> dict:
+def chat(model_id: str, message: str, history: Optional[list[dict]] = None, temperature=0.8) -> dict:
     """
     Forwards a chat request to the given model's running llama-server instance.
     Raises InferenceError if the model isn't currently loaded or the request fails.
@@ -161,7 +161,10 @@ def chat(model_id: str, message: str, history: Optional[list[dict]] = None) -> d
     try:
         response = requests.post(
             f"http://localhost:{entry['port']}/v1/chat/completions",
-            json={"messages": messages},
+            json = {
+                "messages": messages,
+                "temperature": temperature,
+                },
             timeout=120,
         )
         response.raise_for_status()
