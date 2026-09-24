@@ -4,8 +4,6 @@ import { useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
 
-// Fill this in with the Whisper variants you want users to be able to download.
-// Shape: { model_id: <your internal id>, hf_model_id: <HF repo>, label: <shown in dropdown> }
 const DOWNLOADABLE_MODELS: { model_id: string; hf_model_id: string; label: string }[] = [
   {
     model_id: 'whisper-tiny-int8-ov',
