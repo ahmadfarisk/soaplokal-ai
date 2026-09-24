@@ -144,15 +144,15 @@ def model_exists(model_id: str) -> bool:
 if __name__ == "__main__":
     init_db()
 
-    add_model("whisper-tiny-int8", "OpenVINO/whisper-tiny-int8-ov")
-    print("After add_model:", get_model("whisper-tiny-int8"))
+    add_model("whisper-tiny-int8-ov", "OpenVINO/whisper-tiny-int8-ov")
+    print("After add_model:", get_model("whisper-tiny-int8-ov"))
 
     update_status(
-        "whisper-tiny-int8",
+        "whisper-tiny-int8-ov",
         status="ready",
         local_path="./models/whisper-tiny-int8-ov",
         size_bytes=45_000_000,
     )
-    print("After update_status:", get_model("whisper-tiny-int8"))
+    print("After update_status:", get_model("whisper-tiny-int8-ov"))
 
     print("All models:", get_all_models())

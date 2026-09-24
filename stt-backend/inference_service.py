@@ -27,7 +27,7 @@ def load_model(model_id: str, local_path: str):
     return
   
   # Unload pipelines so there's only one pipeline at all time
-  _unload_all()
+  unload_all()
   
   try:
     logger.info(f"Loading [{model_id}] pipeline.")
@@ -53,6 +53,15 @@ def unload_model(model_id: str) -> None:
     logger.info(f"[{model_id}] Not currently loaded, nothing to unload.")
 
 
+def unload_all() -> None:
+  """Removes all loaded pipelines from memory."""
+  for model_id in list(_loaded_pipelines.keys()):
+    unload_model(model_id)
+  
+
+# Get loaded model
+def get_loaded_models() -> str:
+  print(_loaded_pipelines)
 
 
 # Transcribe an audio (RETURNS THE TEXT)
@@ -63,15 +72,6 @@ def transcribe(model_id: str, audio_path: str) -> str:
   result = pipe(audio_path)
   return result["text"]
 
-
-
-
-# Helper
-
-def _unload_all() -> None:
-  """Removes all loaded pipelines from memory."""
-  for model_id in list(_loaded_pipelines.keys()):
-    unload_model(model_id)
 
 
 
@@ -91,4 +91,4 @@ if __name__ == "__main__":
   except InferenceError as e:
     print(f"Error: {e}")
   finally:
-    _unload_all()
+    unload_all()

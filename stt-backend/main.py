@@ -65,13 +65,13 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     models_registry.init_db()
-    logger.info("STT registry initialized.")
+    logger.info("STT registry initialized. ✅")
 
 
 @app.on_event("shutdown")
 def on_shutdown():
     inference_service.unload_all()
-    logger.info("All STT models unloaded on shutdown.")
+    logger.info("All STT models unloaded on shutdown. 🧼")
 
 
 # ---------------------------------------------------------------------------

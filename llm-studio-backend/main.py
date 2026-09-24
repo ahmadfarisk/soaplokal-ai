@@ -42,14 +42,14 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     models_registry.init_db()
-    logger.info("Registry initialized. ✅")
+    logger.info("LLM Registry initialized. ✅")
 
 
 @app.on_event("shutdown")
 def on_shutdown():
     # Prevents orphaned llama-server.exe processes if the backend stops/restarts.
     inference_service.unload_all()
-    logger.info("All models unloaded on shutdown. 🧼")
+    logger.info("All LLM models unloaded on shutdown. 🧼")
 
 
 # ---------------------------------------------------------------------------
