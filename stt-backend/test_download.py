@@ -1,5 +1,5 @@
 from optimum.intel import OVModelForSpeechSeq2Seq
-from transformers import AutoProcessor
+from transformers import AutoProcessor, WhisperProcessor
 from pathlib import Path
 
 MODELS_DIR = Path(__file__).parent / "models"

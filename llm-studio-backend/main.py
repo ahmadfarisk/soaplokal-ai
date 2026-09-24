@@ -23,7 +23,7 @@ from inference_service import InferenceError
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Mini Edge AI Studio — LLM Backend")
+app = FastAPI(title="Local AI Studio — LLM Backend")
 
 # Allow the Next.js dev server (different port) to call this API directly.
 # Tighten this to your actual frontend origin before deploying anywhere.
