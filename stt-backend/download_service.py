@@ -122,8 +122,8 @@ if __name__ == "__main__":
     models_registry.init_db()
 
     # Should succeed
-    download("whisper-small-int8-ov", "OpenVINO/whisper-small-int8-ov")
-    print(models_registry.get_model("whisper-small-int8-ov"))
+    download("whisper-tiny-int8-ov", "OpenVINO/whisper-tiny-int8-ov")
+    print(models_registry.get_model("whisper-tiny-int8-ov"))
 
     # # Should fail cleanly with a clear error, not a crash
     # download("bad-model", "this-repo/does-not-exist")
