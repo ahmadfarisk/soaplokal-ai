@@ -16,3 +16,4 @@ roar.txt
 stt-backend/models/
 
 llama.cpp/
+**/*.db
