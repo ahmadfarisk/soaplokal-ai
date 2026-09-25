@@ -69,7 +69,7 @@ def transcribe(model_id: str, audio_path: str) -> str:
   pipe = _loaded_pipelines.get(model_id)
   if pipe is None:
     raise InferenceError(f"Model '{model_id}' is not loaded.")
-  result = pipe(audio_path)
+  result = pipe(audio_path, return_timestamps=True)
   return result["text"]
 
 
