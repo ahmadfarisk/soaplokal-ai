@@ -135,7 +135,7 @@ def get_loaded_models() -> dict:
 def _load_llama_cpp(model_id: str, local_path: str) -> dict:
     if not LLAMA_SERVER_PATH.exists():
         raise InferenceError(f"llama-server.exe not found at {LLAMA_SERVER_PATH}. Check the path.")
-
+    
     port = _find_free_port()
     logger.info(f"[{model_id}] Spawning llama-server on port {port} for {local_path}")
 

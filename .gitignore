@@ -14,6 +14,7 @@ roar.txt
 .env
 
 **/models/*
+!**/models/.gitkeep
 
 llama.cpp/
 **/*.db
