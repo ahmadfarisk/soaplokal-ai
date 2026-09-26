@@ -58,9 +58,10 @@ def on_shutdown():
 
 class DownloadRequest(BaseModel):
     model_id: str
-    repo_id: str
-    filename: str
-    force: bool = False
+    engine: str
+    repo_id: Optional[str] = None
+    filename: Optional[str] = None
+    hf_model_id: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
@@ -120,8 +121,16 @@ def download_model(req: DownloadRequest, background_tasks: BackgroundTasks):
     if existing and existing["status"] == "ready" and not req.force:
         return {"status": "already_downloaded", "model": existing}
 
+    # background_tasks.add_task(
+    #     download_service.download, req.model_id, req.repo_id, req.filename
+    # )
     background_tasks.add_task(
-        download_service.download, req.model_id, req.repo_id, req.filename
+        download_service.download,
+        req.model_id,
+        req.engine,
+        repo_id=req.repo_id,
+        filename=req.filename,
+        hf_model_id=req.hf_model_id,
     )
     return {"status": "started", "model_id": req.model_id}
 

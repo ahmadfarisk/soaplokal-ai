@@ -21,7 +21,7 @@ _loaded_pipelines: dict[str, object] = {}
 # Load / Unload
 
 # Load model
-def load_model(model_id: str, local_path: str):
+def load_model(model_id: str, local_path: str, device: str = "AUTO"):
   # Returns if model is already loaded
   if model_id in _loaded_pipelines: 
     return
@@ -32,7 +32,7 @@ def load_model(model_id: str, local_path: str):
   try:
     logger.info(f"Loading [{model_id}] pipeline.")
     # Load model
-    model = OVModelForSpeechSeq2Seq.from_pretrained(local_path)
+    model = OVModelForSpeechSeq2Seq.from_pretrained(local_path, device=device)
     processor = AutoProcessor.from_pretrained(local_path)
     # Put loade model into the list of loaded models
     _loaded_pipelines[model_id] = pipeline(

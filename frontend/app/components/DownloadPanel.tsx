@@ -64,7 +64,7 @@ export default function DownloadPanel({
       setStatus(
         data.status === "already_downloaded"
           ? "Already downloaded."
-          : "Download started — check the model list above once it's ready."
+          : "Download started — check the model list once it's ready."
       );
       onDownloadStarted?.();
     } catch (err) {

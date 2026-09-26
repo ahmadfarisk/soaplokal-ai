@@ -1,9 +1,16 @@
 """
 inference_service.py
 
-Manages llama-server subprocesses: loading (spawn + health-check),
-unloading (terminate), and proxying chat requests to whichever
-model is currently loaded. Separate from download/storage concerns.
+Manages model inference across two engines:
+  - "llama_cpp": spawns llama-server as a subprocess (load = spawn + health-check,
+     unload = terminate, chat = HTTP proxy to its port)
+  - "openvino":  loads the model directly into this process via optimum-intel
+     (load = OVModelForCausalLM.from_pretrained, unload = drop the reference,
+     chat = tokenizer.apply_chat_template + model.generate)
+
+Separate from download/storage concerns (see download_service.py / models_registry.py).
+Both engines are tracked in one unified _loaded_models dict, keyed by model_id,
+with an "engine" field on each entry so load/unload/chat know which path to take.
 """
 
 import logging
@@ -21,16 +28,22 @@ logger = logging.getLogger(__name__)
 # --- Configuration ---------------------------------------------------------
 
 LLAMA_SERVER_PATH = Path(__file__).parent.parent / "llama.cpp" / "build" / "bin" / "Release" / "llama-server.exe"
-# Path(
-#     r"C:/Users/Administrator/Desktop/Faris/Projects/Web Development/WebApp1/local-ai-00112/llama.cpp/build/bin/Release/llama-server.exe"
-# )
 
 PORT_RANGE_START = 8100
 HEALTH_CHECK_TIMEOUT_SECONDS = 60
 HEALTH_CHECK_INTERVAL_SECONDS = 1
 
+DEFAULT_MAX_TOKENS = 512
+DEFAULT_TEMPERATURE = 0.8
+DEFAULT_OV_DEVICE = "AUTO"  # OpenVINO picks the best available device, falls back to CPU
+
 # --- In-memory state ---------------------------------------------------------
-# { model_id: {"process": Popen, "port": int} }
+# One dict for both engines. Shape depends on entry["engine"]:
+#   llama_cpp -> {"engine": "llama_cpp", "process": Popen, "port": int}
+#   openvino  -> {"engine": "openvino", "model": OVModelForCausalLM, "tokenizer": AutoTokenizer}
+# Kept in memory only — does NOT need to survive a backend restart, since a
+# restart means any spawned llama-server processes should be killed anyway,
+# and any in-process OpenVINO models are gone along with the process itself.
 _loaded_models: dict[str, dict] = {}
 
 
@@ -38,62 +51,105 @@ class InferenceError(Exception):
     """Raised for load/unload/chat failures the caller needs to handle explicitly."""
 
 
-# Note: State (which models are loaded, on which ports) is kept in memory only,
-# it does NOT need to survive a backend restart, since a restart means all spawned llama-server processes should be killed anyway.
-
-
-
 # ---------------------------------------------------------------------------
-# Load / unload
+# Load / unload — public API, branches by engine internally
 # ---------------------------------------------------------------------------
 
-def load_model(model_id: str) -> dict:
+def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE) -> dict:
     """
-    Spawns llama-server for the given model_id and waits until it's healthy.
-    Raises InferenceError if the model isn't downloaded, already loaded
-    elsewhere, or fails to become healthy in time.
+    Loads a model using whichever engine it's registered under.
+    `device` only applies to the openvino engine (e.g. "CPU", "GPU", "AUTO");
+    ignored for llama_cpp.
+
+    Raises InferenceError if the model isn't downloaded, its engine is
+    unrecognized, or it fails to load/become healthy.
     """
-    # Check if model already loaded
+    # Check if model is already loaded
     if model_id in _loaded_models:
-        logger.info(f"[{model_id}] Already loaded on port {_loaded_models[model_id]['port']}.")
+        logger.info(f"[{model_id}] Already loaded.")
         return _loaded_models[model_id]
 
-    # Check about the model in model registry, and raises an error if it's not perfectly ready
     model = models_registry.get_model(model_id)
+
+    # Check if model is not registered or not finished downloading
     if model is None:
         raise InferenceError(f"Model '{model_id}' not found in registry.")
     if model["status"] != "ready":
         raise InferenceError(f"Model '{model_id}' is not downloaded yet (status: {model['status']}).")
+
+    # Check if model exists in the folders
+    local_path = model["local_path"]
+    if not local_path or not Path(local_path).exists():
+        raise InferenceError(f"Model file/folder missing on disk: {local_path}")
+
+    # Call load function according to chosen engine
+    engine = model["engine"]
+    if engine == "llama_cpp":
+        entry = _load_llama_cpp(model_id, local_path)
+    elif engine == "openvino":
+        entry = _load_openvino(model_id, local_path, device)
+    else:
+        raise InferenceError(f"Unknown engine '{engine}' for model '{model_id}'.")
     
-    # Check if path llama-server.exe path is correct
+    # Add it into the loaded model list
+    _loaded_models[model_id] = entry
+    logger.info(f"[{model_id}] Ready ({engine}).")
+    return entry
+
+
+def unload_model(model_id: str) -> None:
+    """Releases a loaded model's resources — terminates the process (llama_cpp) or drops the reference (openvino)."""
+    entry = _loaded_models.get(model_id)
+    if entry is None:
+        logger.info(f"[{model_id}] Not currently loaded, nothing to unload.")
+        return
+
+    # Call unload function according to the model's engine
+    if entry["engine"] == "llama_cpp":
+        _unload_llama_cpp(model_id, entry)
+    elif entry["engine"] == "openvino":
+        _unload_openvino(model_id, entry)
+
+    del _loaded_models[model_id]
+    logger.info(f"[{model_id}] Unloaded.")
+
+
+def unload_all() -> None:
+    """Call this on backend shutdown so no orphaned llama-server processes (or lingering OV models) are left running."""
+    for model_id in list(_loaded_models.keys()):
+        unload_model(model_id)
+
+
+def get_loaded_models() -> dict:
+    """Returns {model_id: {"engine": ..., "port": port or None}} for everything currently loaded."""
+    return {
+        model_id: {"engine": entry["engine"], "port": entry.get("port")}
+        for model_id, entry in _loaded_models.items()
+    }
+
+
+# ---------------------------------------------------------------------------
+# llama_cpp engine — subprocess + HTTP, same mechanics as before
+# ---------------------------------------------------------------------------
+
+def _load_llama_cpp(model_id: str, local_path: str) -> dict:
     if not LLAMA_SERVER_PATH.exists():
         raise InferenceError(f"llama-server.exe not found at {LLAMA_SERVER_PATH}. Check the path.")
 
-    # Check if the path from inside the registry actually points to an existing model file
-    local_path = model["local_path"]
-    if not local_path or not Path(local_path).exists():
-        raise InferenceError(f"Model file missing on disk: {local_path}")
-
-    # Find a free port to start the llama-server
     port = _find_free_port()
-
     logger.info(f"[{model_id}] Spawning llama-server on port {port} for {local_path}")
+
     try:
-        # subprocess is like the cmd thing. This process is similar to writing the following command on cmd:
-        # ./build/bin/Release/llama-server -m ./my_models/Qwen3-0.6B-Q8_0.gguf --port 8001
+        # Equivalent to running on the command line:
+        # ./build/bin/Release/llama-server -m <local_path> --port <port>
         process = subprocess.Popen(
-            [
-                str(LLAMA_SERVER_PATH), # cmd command to start server
-                "-m", local_path, # set model
-                "--port", str(port), # set the port
-            ],
+            [str(LLAMA_SERVER_PATH), "-m", local_path, "--port", str(port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
     except OSError as e:
         raise InferenceError(f"Failed to start llama-server process: {e}")
 
-    # Check for server health for a set amount of time, and raise an error if it fails
     if not _wait_for_healthy(port):
         process.terminate()
         raise InferenceError(
@@ -101,85 +157,119 @@ def load_model(model_id: str) -> dict:
             f"Check that the .gguf file isn't corrupted and there's enough RAM to load it."
         )
 
-    # Insert the "process" that we run and its port into the loaded model list
-    _loaded_models[model_id] = {"process": process, "port": port}
-    logger.info(f"[{model_id}] Ready on port {port}.")
-    return _loaded_models[model_id]
+    return {"engine": "llama_cpp", "process": process, "port": port}
 
 
-def unload_model(model_id: str) -> None:
-    """Terminates the process for a loaded model and frees its port."""
-    entry = _loaded_models.get(model_id)
-    # Check if the model to unload is actually loaded
-    if entry is None:
-        logger.info(f"[{model_id}] Not currently loaded, nothing to unload.")
-        return
-
-    process: subprocess.Popen = entry["process"] # Select the "process" to end
+def _unload_llama_cpp(model_id: str, entry: dict) -> None:
+    process: subprocess.Popen = entry["process"]
     process.terminate()
-    # Kill if not terminated normally
     try:
         process.wait(timeout=10)
     except subprocess.TimeoutExpired:
         logger.warning(f"[{model_id}] Did not terminate gracefully, killing.")
         process.kill()
 
-    # Remove from loaded model list
-    del _loaded_models[model_id]
-    logger.info(f"[{model_id}] Unloaded.")
 
+def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, temperature: float, timeout: int) -> dict:
+    messages = (history or []) + [{"role": "user", "content": message}]
+    try:
+        response = requests.post(
+            f"http://localhost:{entry['port']}/v1/chat/completions",
+            json={"messages": messages, "temperature": temperature},
+            timeout=timeout,
+        )
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        raise InferenceError(
+            f"Could not reach llama-server on port {entry['port']}. It may have crashed — try unloading and reloading."
+        )
+    except requests.exceptions.Timeout:
+        raise InferenceError(f"Request timed out after {timeout}s.")
+    except requests.exceptions.HTTPError as e:
+        raise InferenceError(f"llama-server returned an error: {e}")
 
-def unload_all() -> None:
-    """Call this on backend shutdown so no orphaned llama-server processes are left running."""
-    for model_id in list(_loaded_models.keys()):
-        unload_model(model_id)
-
-
-def get_loaded_models() -> dict:
-    """Returns {model_id: port} for everything currently loaded."""
-    return {model_id: entry["port"] for model_id, entry in _loaded_models.items()}
+    return response.json()  # already in the {"choices": [{"message": {"content": ...}}]} shape
 
 
 # ---------------------------------------------------------------------------
-# Chat proxy
+# openvino engine — loaded in-process via optimum-intel, no subprocess/port
 # ---------------------------------------------------------------------------
 
-def chat(model_id: str, message: str, history: Optional[list[dict]] = None, temperature=0.8) -> dict:
+def _load_openvino(model_id: str, local_path: str, device: str) -> dict:
+    # Imported lazily so the llama_cpp-only path doesn't require optimum[openvino]
+    # to be installed if you're not using any OpenVINO models.
+    logger.info(f"[{model_id}] Preparing to load OpenVINO model.")
+    try:
+        from optimum.intel import OVModelForCausalLM
+        from transformers import AutoTokenizer
+    except ImportError as e:
+        raise InferenceError(
+            "optimum[openvino] is not installed. Run: pip install \"optimum[openvino]\""
+        ) from e
+
+    logger.info(f"[{model_id}] Loading OpenVINO model from {local_path} (device={device})")
+    try:
+        model = OVModelForCausalLM.from_pretrained(local_path, device=device)
+        tokenizer = AutoTokenizer.from_pretrained(local_path)
+    except Exception as e:
+        raise InferenceError(f"Failed to load OpenVINO model: {e}")
+
+    return {"engine": "openvino", "model": model, "tokenizer": tokenizer, "port": 'NONE'}
+
+
+def _unload_openvino(model_id: str, entry: dict) -> None:
+    # Nothing to terminate — just let Python garbage-collect the model/tokenizer
+    # once _loaded_models no longer holds a reference to them.
+    pass
+
+
+def _chat_openvino(entry: dict, message: str, history: list[dict] | None, max_tokens: int) -> dict:
+    model = entry["model"]
+    tokenizer = entry["tokenizer"]
+    messages = (history or []) + [{"role": "user", "content": message}]
+
+    try:
+        prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = tokenizer(prompt, return_tensors="pt")
+        outputs = model.generate(**inputs, max_new_tokens=max_tokens)
+        text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+    except Exception as e:
+        raise InferenceError(f"OpenVINO generation failed: {e}")
+
+    # Normalized to match llama_cpp's response shape, so main.py and the
+    # frontend never need to know which engine actually answered.
+    return {"choices": [{"message": {"content": text}}]}
+
+
+# ---------------------------------------------------------------------------
+# Unified chat — branches by engine, returns the same shape either way
+# ---------------------------------------------------------------------------
+
+def chat(
+    model_id: str,
+    message: str,
+    history: Optional[list[dict]] = None,
+    temperature: float = DEFAULT_TEMPERATURE,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
+    timeout: int = 300,
+) -> dict:
     """
-    Forwards a chat request to the given model's running llama-server instance.
+    Sends a chat message to whichever engine the loaded model uses.
+    `temperature`/`timeout` only apply to llama_cpp; `max_tokens` applies to both.
     Raises InferenceError if the model isn't currently loaded or the request fails.
+    Always returns {"choices": [{"message": {"content": "..."}}]} regardless of engine.
     """
-    # (Try to) Select the model "process"
     entry = _loaded_models.get(model_id)
     if entry is None:
         raise InferenceError(f"Model '{model_id}' is not loaded. Call load_model() first.")
 
-    # Format the message
-    messages = (history or []) + [{"role": "user", "content": message}]
-
-    # Send the message to the LLM
-    try:
-        response = requests.post(
-            f"http://localhost:{entry['port']}/v1/chat/completions",
-            json = {
-                "messages": messages,
-                "temperature": temperature,
-                },
-            timeout=120,
-        )
-        response.raise_for_status()
-    # Error checks
-    except requests.exceptions.ConnectionError:
-        raise InferenceError(
-            f"Could not reach llama-server for '{model_id}' on port {entry['port']}. "
-            f"It may have crashed — try unloading and reloading."
-        )
-    except requests.exceptions.Timeout:
-        raise InferenceError(f"Request to '{model_id}' timed out after 120s.")
-    except requests.exceptions.HTTPError as e:
-        raise InferenceError(f"llama-server returned an error: {e}")
-
-    return response.json()
+    # Call chat function according to the model's engine
+    if entry["engine"] == "llama_cpp":
+        return _chat_llama_cpp(entry, message, history, temperature, timeout)
+    elif entry["engine"] == "openvino":
+        return _chat_openvino(entry, message, history, max_tokens)
+    else:
+        raise InferenceError(f"Unknown engine '{entry['engine']}' for model '{model_id}'.")
 
 
 # ---------------------------------------------------------------------------
@@ -187,8 +277,8 @@ def chat(model_id: str, message: str, history: Optional[list[dict]] = None, temp
 # ---------------------------------------------------------------------------
 
 def _find_free_port() -> int:
-    """Returns the next port not currently assigned to a loaded model."""
-    used_ports = {entry["port"] for entry in _loaded_models.values()}
+    """Returns the next port not currently assigned to a loaded llama_cpp model."""
+    used_ports = {entry["port"] for entry in _loaded_models.values() if entry["engine"] == "llama_cpp"}
     port = PORT_RANGE_START
     while port in used_ports:
         port += 1
@@ -217,13 +307,24 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     models_registry.init_db()
 
-    MODEL_ID = "qwen2.5-1.5b-q4"
-
+    # --- llama_cpp engine ---
+    LLAMA_MODEL_ID = "qwen2.5-1.5b-q4"
     try:
-        load_model(MODEL_ID)
-        result = chat(MODEL_ID, "Say hi in one sentence.")
-        print(result["choices"][0]["message"]["content"])
+        load_model(LLAMA_MODEL_ID)
+        result = chat(LLAMA_MODEL_ID, "Say hi in one sentence.")
+        print("[llama_cpp]", result["choices"][0]["message"]["content"])
     except InferenceError as e:
-        print(f"Error: {e}")
+        print(f"[llama_cpp] Error: {e}")
     finally:
-        unload_model(MODEL_ID)
+        unload_model(LLAMA_MODEL_ID)
+
+    # --- openvino engine ---
+    OV_MODEL_ID = "qwen2.5-1.5b-ov-8bit"
+    try:
+        load_model(OV_MODEL_ID, device="AUTO")
+        result = chat(OV_MODEL_ID, "Say hi in one sentence.")
+        print("[openvino]", result["choices"][0]["message"]["content"])
+    except InferenceError as e:
+        print(f"[openvino] Error: {e}")
+    finally:
+        unload_model(OV_MODEL_ID)

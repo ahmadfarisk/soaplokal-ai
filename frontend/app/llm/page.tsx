@@ -6,8 +6,10 @@ const API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
 
 interface ModelInfo {
   id: string;
-  repo_id: string;
-  filename: string;
+  engine: "llama_cpp" | "openvino";
+  repo_id: string | null;
+  filename: string | null;
+  hf_model_id: string | null;
   status: string;
   local_path: string | null;
 }
@@ -22,9 +24,11 @@ export default function StudioPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Fields for downloading a NEW model
+  const [newEngine, setNewEngine] = useState<"llama_cpp" | "openvino">("llama_cpp");
   const [newModelId, setNewModelId] = useState("");
   const [newRepoId, setNewRepoId] = useState("");
   const [newFilename, setNewFilename] = useState("");
+  const [newHfModelId, setNewHfModelId] = useState("");
 
   // Known models + which one is selected
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -75,15 +79,34 @@ export default function StudioPage() {
   }
 
   async function handleDownload() {
-    if (!newModelId || !newRepoId || !newFilename) {
-      setError("Fill in Model ID, Repo ID, and Filename before downloading.");
+    if (!newModelId) {
+      setError("Fill in a Model ID before downloading.");
       return;
     }
-    await callApi("/models/download", "POST", {
-      model_id: newModelId,
-      repo_id: newRepoId,
-      filename: newFilename,
-    });
+
+    if (newEngine === "llama_cpp") {
+      if (!newRepoId || !newFilename) {
+        setError("Fill in Repo ID and Filename before downloading.");
+        return;
+      }
+      await callApi("/models/download", "POST", {
+        model_id: newModelId,
+        engine: "llama_cpp",
+        repo_id: newRepoId,
+        filename: newFilename,
+      });
+    } else {
+      if (!newHfModelId) {
+        setError("Fill in the Hugging Face model ID before downloading.");
+        return;
+      }
+      await callApi("/models/download", "POST", {
+        model_id: newModelId,
+        engine: "openvino",
+        hf_model_id: newHfModelId,
+      });
+    }
+
     await refreshModels();
   }
 
@@ -154,24 +177,47 @@ export default function StudioPage() {
         <section className="w-full" style={{ marginBottom: 24, padding: 16, border: "1px solid #ddd", borderRadius: 8 }}>
           <h3 style={{ marginTop: 0 }}>Download a new model from Hugging Face</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 480 }}>
+            <select
+              className="text-white bg-black"
+              style={inputStyle}
+              value={newEngine}
+              onChange={(e) => setNewEngine(e.target.value as "llama_cpp" | "openvino")}
+            >
+              <option value="llama_cpp">llama.cpp (GGUF)</option>
+              <option value="openvino">OpenVINO (pre-converted)</option>
+            </select>
+
             <input
               style={inputStyle}
               placeholder="Model ID (e.g. qwen2.5-1.5b-q4)"
               value={newModelId}
               onChange={(e) => setNewModelId(e.target.value)}
             />
-            <input
-              style={inputStyle}
-              placeholder="Repo ID (e.g. bartowski/Qwen2.5-1.5B-Instruct-GGUF)"
-              value={newRepoId}
-              onChange={(e) => setNewRepoId(e.target.value)}
-            />
-            <input
-              style={inputStyle}
-              placeholder="Filename (e.g. Qwen2.5-1.5B-Instruct-Q4_K_M.gguf)"
-              value={newFilename}
-              onChange={(e) => setNewFilename(e.target.value)}
-            />
+
+            {newEngine === "llama_cpp" ? (
+              <>
+                <input
+                  style={inputStyle}
+                  placeholder="Repo ID (e.g. bartowski/Qwen2.5-1.5B-Instruct-GGUF)"
+                  value={newRepoId}
+                  onChange={(e) => setNewRepoId(e.target.value)}
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Filename (e.g. Qwen2.5-1.5B-Instruct-Q4_K_M.gguf)"
+                  value={newFilename}
+                  onChange={(e) => setNewFilename(e.target.value)}
+                />
+              </>
+            ) : (
+              <input
+                style={inputStyle}
+                placeholder="Hugging Face model ID (e.g. hsuwill000/Qwen2.5-1.5B-Instruct-openvino-8bit)"
+                value={newHfModelId}
+                onChange={(e) => setNewHfModelId(e.target.value)}
+              />
+            )}
+
             <button className="hover:text-green-500" disabled={busy} onClick={handleDownload} style={{ alignSelf: "flex-start" }}>
               Download
             </button>
@@ -191,7 +237,7 @@ export default function StudioPage() {
               <option value="">-- no model selected --</option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.id} ({m.status})
+                  {m.id} — {m.engine} ({m.status})
                 </option>
               ))}
             </select>

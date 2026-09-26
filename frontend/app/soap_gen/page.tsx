@@ -32,12 +32,21 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
   },
 ];
 
+// function buildSoapPrompt(transcript: string): string {
+//   return `You are a documentation assistant. Convert the following conversation transcript into a SOAP note.
+
+// Use exactly these four section headers, each on its own line, in this order: "Subjective:", "Objective:", "Assessment:", "Plan:". Write only the SOAP note itself — no preamble, no extra commentary.
+
+// Transcript:
+// ${transcript}`;
+// }
+
 function buildSoapPrompt(transcript: string): string {
-  return `You are a documentation assistant. Convert the following conversation transcript into a SOAP note.
+  return `Anda adalah asisten dokumentasi. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
 
-Use exactly these four section headers, each on its own line, in this order: "Subjective:", "Objective:", "Assessment:", "Plan:". Write only the SOAP note itself — no preamble, no extra commentary.
+Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan.
 
-Transcript:
+Transkrip:
 ${transcript}`;
 }
 
