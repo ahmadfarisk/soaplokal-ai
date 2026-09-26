@@ -13,7 +13,7 @@ roar.txt
 .env.local
 .env
 
-models/
+**/models/*
 
 llama.cpp/
 **/*.db
