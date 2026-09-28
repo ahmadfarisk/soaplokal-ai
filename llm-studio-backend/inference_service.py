@@ -35,11 +35,11 @@ HEALTH_CHECK_INTERVAL_SECONDS = 1
 
 DEFAULT_OV_DEVICE = "AUTO"
 
-DEFAULT_MAX_TOKENS = 512
-DEFAULT_TEMPERATURE = 0.6            
-DEFAULT_TOP_P = 0.9                  
+DEFAULT_MAX_TOKENS = 1024
+DEFAULT_TEMPERATURE = 0.8
 DEFAULT_REPETITION_PENALTY = 1.15
-DEFAULT_NO_REPEAT_NGRAM_SIZE = None 
+DEFAULT_TOP_P = 0.9
+DEFAULT_TOP_K = 40
 
 # --- In-memory state ---------------------------------------------------------
 # One dict for both engines. Shape depends on entry["engine"]:
@@ -167,15 +167,18 @@ def _unload_llama_cpp(model_id: str, entry: dict) -> None:
         process.kill()
 
 
-def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, temperature: float, timeout: int) -> dict:
+def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, params: dict, timeout: int) -> dict:
     messages = (history or []) + [{"role": "user", "content": message}]
     try:
         response = requests.post(
             f"http://localhost:{entry['port']}/v1/chat/completions",
             json={
                 "messages": messages,
-                "temperature": temperature,
-                "repeat_penalty": DEFAULT_REPETITION_PENALTY,
+                "temperature": params["temperature"],
+                "top_p": params["top_p"],
+                "top_k": params["top_k"],
+                "repeat_penalty": params["repetition_penalty"],
+                "max_tokens": params["max_tokens"],
             },
             timeout=timeout,
         )
@@ -224,13 +227,7 @@ def _unload_openvino(model_id: str, entry: dict) -> None:
     pass
 
 
-def _chat_openvino(
-    entry: dict,
-    message: str,
-    history: list[dict] | None,
-    max_tokens: int,
-    temperature: float = DEFAULT_TEMPERATURE,
-) -> dict:
+def _chat_openvino(entry: dict, message: str, history: list[dict] | None, params: dict) -> dict:
     model = entry["model"]
     tokenizer = entry["tokenizer"]
     messages = (history or []) + [{"role": "user", "content": message}]
@@ -238,19 +235,23 @@ def _chat_openvino(
     try:
         prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tokenizer(prompt, return_tensors="pt")
-        
+
         generate_kwargs = {
-            "max_new_tokens": max_tokens,
-            "do_sample": True,
-            "temperature": temperature,
-            "top_p": DEFAULT_TOP_P,
-            "repetition_penalty": DEFAULT_REPETITION_PENALTY,
+            "max_new_tokens": params["max_tokens"],
+            "repetition_penalty": params["repetition_penalty"],
         }
-        if DEFAULT_NO_REPEAT_NGRAM_SIZE:
-            generate_kwargs["no_repeat_ngram_size"] = DEFAULT_NO_REPEAT_NGRAM_SIZE
+        # temperature 0 means "be deterministic" -> greedy decoding instead of sampling
+        if params["temperature"] > 0:
+            generate_kwargs.update(
+                do_sample=True,
+                temperature=params["temperature"],
+                top_p=params["top_p"],
+                top_k=params["top_k"],
+            )
+        else:
+            generate_kwargs["do_sample"] = False
 
         outputs = model.generate(**inputs, **generate_kwargs)
-
         text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
     except Exception as e:
         raise InferenceError(f"OpenVINO generation failed: {e}")
@@ -269,12 +270,16 @@ def chat(
     message: str,
     history: Optional[list[dict]] = None,
     temperature: float = DEFAULT_TEMPERATURE,
+    top_p: float = DEFAULT_TOP_P,
+    top_k: int = DEFAULT_TOP_K,
+    repetition_penalty: float = DEFAULT_REPETITION_PENALTY,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     timeout: int = 300,
 ) -> dict:
     """
-    Sends a chat message to whichever engine the loaded model uses.
-    `temperature`/`timeout` only apply to llama_cpp; `max_tokens` applies to both.
+    Sends a chat message to whichever engine the loaded model uses. All sampling
+    parameters are per-request, so they can be changed freely without reloading
+    the model. `timeout` only applies to llama_cpp (the HTTP call).
     Raises InferenceError if the model isn't currently loaded or the request fails.
     Always returns {"choices": [{"message": {"content": "..."}}]} regardless of engine.
     """
@@ -282,10 +287,18 @@ def chat(
     if entry is None:
         raise InferenceError(f"Model '{model_id}' is not loaded. Call load_model() first.")
 
+    params = {
+        "temperature": temperature,
+        "top_p": top_p,
+        "top_k": top_k,
+        "repetition_penalty": repetition_penalty,
+        "max_tokens": max_tokens,
+    }
+
     if entry["engine"] == "llama_cpp":
-        return _chat_llama_cpp(entry, message, history, temperature, timeout)
+        return _chat_llama_cpp(entry, message, history, params, timeout)
     elif entry["engine"] == "openvino":
-        return _chat_openvino(entry, message, history, max_tokens, temperature)
+        return _chat_openvino(entry, message, history, params)
     else:
         raise InferenceError(f"Unknown engine '{entry['engine']}' for model '{model_id}'.")
 

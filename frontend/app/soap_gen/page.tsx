@@ -5,6 +5,10 @@ import ModelPanel from "@/components/ModelPanel";
 import DownloadPanel from "@/components/DownloadPanel";
 import TranscriptionPanel from "@/components/TranscriptionPanel";
 import SoapNoteResult from "@/components/SoapNoteResult";
+import GenerationParamsPanel, {
+  DEFAULT_GENERATION_PARAMS,
+  GenerationParams,
+} from "@/components/GenerationParamsPanel";
 
 const STT_API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
@@ -29,6 +33,11 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
     model_id: 'whisper-medium-int8-ov',
     label: 'Whisper Medium (INT8)',
     extra: { hf_model_id: 'OpenVINO/whisper-medium-int8-ov' },
+  },
+  {
+    model_id: 'whisper-large-v3-int8-ov',
+    label: 'Whisper V3 Large (INT8)',
+    extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
   },
 ];
 
@@ -60,6 +69,9 @@ export default function SoapNotePage() {
   const [soapNote, setSoapNote] = useState("");
   const [generating, setGenerating] = useState(false);
 
+  const [genParams, setGenParams] = useState<GenerationParams>(DEFAULT_GENERATION_PARAMS);
+
+
   async function handleGenerate() {
     if (!transcript.trim() || !llmModelId) return;
     setGenerating(true);
@@ -73,7 +85,7 @@ export default function SoapNotePage() {
         body: JSON.stringify({
           model_id: llmModelId,
           message: buildSoapPrompt(transcript),
-          max_tokens: 1500,  
+          ...genParams,
         }),
       });
       const data = await res.json();
@@ -147,6 +159,8 @@ export default function SoapNotePage() {
               onLoadedChange={setLlmModelId}
               onError={setError}
             />
+
+            <GenerationParamsPanel params={genParams} onChange={setGenParams} />
 
             <section className="rounded-lg border border-gray-200 p-4">
               <button
