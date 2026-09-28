@@ -1,9 +1,13 @@
+"use client";
+
+import { useState } from "react";
 interface SoapSections {
   subjective: string;
   objective: string;
   assessment: string;
   plan: string;
 }
+
 
 /**
  * Splits the LLM's raw response into the four SOAP sections. Relies on the
@@ -39,6 +43,12 @@ interface SoapNoteResultProps {
 }
 
 export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
+  const [viewRaw, setViewRaw] = useState(false);
+
+  function toggleViewRaw() {
+    setViewRaw(!viewRaw)
+  }
+
   if (!rawText) {
     return (
       <section className="rounded-lg border border-gray-200 p-4 h-auto">
@@ -60,22 +70,38 @@ export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
   return (
     <section className="rounded-lg border border-gray-200 p-4">
 
-      <h2 className="text-sm font-medium text-gray-400 mb-3">SOAP note</h2>
-
-      <div className="space-y-4">
-        {rows.map((row) => (
-          <div key={row.label}>
-            {/* Title/Label (eg. Subjective, Objective, etc.) */}
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-200 mb-1">
-              {row.label}
-            </h3>
-            {/* The values*/}
-            <p className="text-sm whitespace-pre-wrap text-gray-400">
-              {row.value || <span className="text-gray-100">—</span>}
-            </p>
-          </div>
-        ))}
+      <div className="flex justify-between">
+        <h2 className="text-sm font-medium text-gray-400 mb-3">SOAP note</h2>
+        <button
+          className={`text-xs ${viewRaw ? "text-green-700" : "text-gray-400"}`}
+          onClick={toggleViewRaw}
+        >
+          Raw Toggle
+        </button>
       </div>
+
+      {viewRaw ? 
+        <div className="space-y-4">
+          <p>
+            {rawText}
+          </p>
+        </div>
+      : 
+        <div className="space-y-4">
+          {rows.map((row) => (
+            <div key={row.label}>
+              {/* Title/Label (eg. Subjective, Objective, etc.) */}
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-200 mb-1">
+                {row.label}
+              </h3>
+              {/* The values*/}
+              <p className="text-sm whitespace-pre-wrap text-gray-400">
+                {row.value || <span className="text-gray-100">—</span>}
+              </p>
+            </div>
+          ))}
+        </div>
+      }
     </section>
   );
 }

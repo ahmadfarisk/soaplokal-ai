@@ -43,9 +43,11 @@ export default function DownloadPanel({
   const [selectedOption, setSelectedOption] = useState("");
 
   // Freeform mode state
+  const [freeEngine, setFreeEngine] = useState<"llama_cpp" | "openvino">("llama_cpp");
   const [freeModelId, setFreeModelId] = useState("");
   const [freeRepoId, setFreeRepoId] = useState("");
   const [freeFilename, setFreeFilename] = useState("");
+  const [freeHfModelId, setFreeHfModelId] = useState("");
 
   async function startDownload(body: Record<string, unknown>) {
     setBusy(true);
@@ -84,11 +86,33 @@ export default function DownloadPanel({
   }
 
   function handleFreeformDownload() {
-    if (!freeModelId || !freeRepoId || !freeFilename) {
-      onError("Fill in Model ID, Repo ID, and Filename before downloading.");
+    if (!freeModelId) {
+      onError("Fill in a Model ID before downloading.");
       return;
     }
-    startDownload({ model_id: freeModelId, repo_id: freeRepoId, filename: freeFilename });
+
+    if (freeEngine === "llama_cpp") {
+      if (!freeRepoId || !freeFilename) {
+        onError("Fill in Repo ID and Filename before downloading.");
+        return;
+      }
+      startDownload({
+        model_id: freeModelId,
+        engine: "llama_cpp",
+        repo_id: freeRepoId,
+        filename: freeFilename,
+      });
+    } else {
+      if (!freeHfModelId) {
+        onError("Fill in the Hugging Face model ID before downloading.");
+        return;
+      }
+      startDownload({
+        model_id: freeModelId,
+        engine: "openvino",
+        hf_model_id: freeHfModelId,
+      });
+    }
   }
 
   return (
@@ -125,24 +149,46 @@ export default function DownloadPanel({
         ) : (
           // LLM Download
           <div className="flex flex-col gap-2">
+            <select
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-white bg-black"
+              value={freeEngine}
+              onChange={(e) => setFreeEngine(e.target.value as "llama_cpp" | "openvino")}
+            >
+              <option value="llama_cpp">llama.cpp (GGUF)</option>
+              <option value="openvino">OpenVINO (pre-converted)</option>
+            </select>
+
             <input
               className="rounded-md border border-gray-300 px-3 py-2 text-sm"
               placeholder="Model ID (e.g. qwen2.5-1.5b-q4)"
               value={freeModelId}
               onChange={(e) => setFreeModelId(e.target.value)}
             />
-            <input
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Repo ID (e.g. bartowski/Qwen2.5-1.5B-Instruct-GGUF)"
-              value={freeRepoId}
-              onChange={(e) => setFreeRepoId(e.target.value)}
-            />
-            <input
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Filename (e.g. Qwen2.5-1.5B-Instruct-Q4_K_M.gguf)"
-              value={freeFilename}
-              onChange={(e) => setFreeFilename(e.target.value)}
-            />
+
+            {freeEngine === "llama_cpp" ? (
+              <>
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Repo ID (e.g. bartowski/Qwen2.5-1.5B-Instruct-GGUF)"
+                  value={freeRepoId}
+                  onChange={(e) => setFreeRepoId(e.target.value)}
+                />
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Filename (e.g. Qwen2.5-1.5B-Instruct-Q4_K_M.gguf)"
+                  value={freeFilename}
+                  onChange={(e) => setFreeFilename(e.target.value)}
+                />
+              </>
+            ) : (
+              <input
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                placeholder="Hugging Face model ID (e.g. hsuwill000/Qwen2.5-1.5B-Instruct-openvino-8bit)"
+                value={freeHfModelId}
+                onChange={(e) => setFreeHfModelId(e.target.value)}
+              />
+            )}
+
             <button
               disabled={busy}
               onClick={handleFreeformDownload}

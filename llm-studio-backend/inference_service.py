@@ -33,9 +33,13 @@ PORT_RANGE_START = 8100
 HEALTH_CHECK_TIMEOUT_SECONDS = 60
 HEALTH_CHECK_INTERVAL_SECONDS = 1
 
+DEFAULT_OV_DEVICE = "AUTO"
+
 DEFAULT_MAX_TOKENS = 512
-DEFAULT_TEMPERATURE = 0.8
-DEFAULT_OV_DEVICE = "AUTO"  # OpenVINO picks the best available device, falls back to CPU
+DEFAULT_TEMPERATURE = 0.6            
+DEFAULT_TOP_P = 0.9                  
+DEFAULT_REPETITION_PENALTY = 1.15
+DEFAULT_NO_REPEAT_NGRAM_SIZE = None 
 
 # --- In-memory state ---------------------------------------------------------
 # One dict for both engines. Shape depends on entry["engine"]:
@@ -64,25 +68,20 @@ def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE) -> dict:
     Raises InferenceError if the model isn't downloaded, its engine is
     unrecognized, or it fails to load/become healthy.
     """
-    # Check if model is already loaded
     if model_id in _loaded_models:
         logger.info(f"[{model_id}] Already loaded.")
         return _loaded_models[model_id]
 
     model = models_registry.get_model(model_id)
-
-    # Check if model is not registered or not finished downloading
     if model is None:
         raise InferenceError(f"Model '{model_id}' not found in registry.")
     if model["status"] != "ready":
         raise InferenceError(f"Model '{model_id}' is not downloaded yet (status: {model['status']}).")
 
-    # Check if model exists in the folders
     local_path = model["local_path"]
     if not local_path or not Path(local_path).exists():
         raise InferenceError(f"Model file/folder missing on disk: {local_path}")
 
-    # Call load function according to chosen engine
     engine = model["engine"]
     if engine == "llama_cpp":
         entry = _load_llama_cpp(model_id, local_path)
@@ -90,8 +89,7 @@ def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE) -> dict:
         entry = _load_openvino(model_id, local_path, device)
     else:
         raise InferenceError(f"Unknown engine '{engine}' for model '{model_id}'.")
-    
-    # Add it into the loaded model list
+
     _loaded_models[model_id] = entry
     logger.info(f"[{model_id}] Ready ({engine}).")
     return entry
@@ -104,7 +102,6 @@ def unload_model(model_id: str) -> None:
         logger.info(f"[{model_id}] Not currently loaded, nothing to unload.")
         return
 
-    # Call unload function according to the model's engine
     if entry["engine"] == "llama_cpp":
         _unload_llama_cpp(model_id, entry)
     elif entry["engine"] == "openvino":
@@ -135,7 +132,7 @@ def get_loaded_models() -> dict:
 def _load_llama_cpp(model_id: str, local_path: str) -> dict:
     if not LLAMA_SERVER_PATH.exists():
         raise InferenceError(f"llama-server.exe not found at {LLAMA_SERVER_PATH}. Check the path.")
-    
+
     port = _find_free_port()
     logger.info(f"[{model_id}] Spawning llama-server on port {port} for {local_path}")
 
@@ -175,7 +172,11 @@ def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, tempe
     try:
         response = requests.post(
             f"http://localhost:{entry['port']}/v1/chat/completions",
-            json={"messages": messages, "temperature": temperature},
+            json={
+                "messages": messages,
+                "temperature": temperature,
+                "repeat_penalty": DEFAULT_REPETITION_PENALTY,
+            },
             timeout=timeout,
         )
         response.raise_for_status()
@@ -214,7 +215,7 @@ def _load_openvino(model_id: str, local_path: str, device: str) -> dict:
     except Exception as e:
         raise InferenceError(f"Failed to load OpenVINO model: {e}")
 
-    return {"engine": "openvino", "model": model, "tokenizer": tokenizer, "port": 'NONE'}
+    return {"engine": "openvino", "model": model, "tokenizer": tokenizer, "port": "NONE"}
 
 
 def _unload_openvino(model_id: str, entry: dict) -> None:
@@ -223,7 +224,13 @@ def _unload_openvino(model_id: str, entry: dict) -> None:
     pass
 
 
-def _chat_openvino(entry: dict, message: str, history: list[dict] | None, max_tokens: int) -> dict:
+def _chat_openvino(
+    entry: dict,
+    message: str,
+    history: list[dict] | None,
+    max_tokens: int,
+    temperature: float = DEFAULT_TEMPERATURE,
+) -> dict:
     model = entry["model"]
     tokenizer = entry["tokenizer"]
     messages = (history or []) + [{"role": "user", "content": message}]
@@ -231,7 +238,19 @@ def _chat_openvino(entry: dict, message: str, history: list[dict] | None, max_to
     try:
         prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tokenizer(prompt, return_tensors="pt")
-        outputs = model.generate(**inputs, max_new_tokens=max_tokens)
+        
+        generate_kwargs = {
+            "max_new_tokens": max_tokens,
+            "do_sample": True,
+            "temperature": temperature,
+            "top_p": DEFAULT_TOP_P,
+            "repetition_penalty": DEFAULT_REPETITION_PENALTY,
+        }
+        if DEFAULT_NO_REPEAT_NGRAM_SIZE:
+            generate_kwargs["no_repeat_ngram_size"] = DEFAULT_NO_REPEAT_NGRAM_SIZE
+
+        outputs = model.generate(**inputs, **generate_kwargs)
+
         text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
     except Exception as e:
         raise InferenceError(f"OpenVINO generation failed: {e}")
@@ -263,11 +282,10 @@ def chat(
     if entry is None:
         raise InferenceError(f"Model '{model_id}' is not loaded. Call load_model() first.")
 
-    # Call chat function according to the model's engine
     if entry["engine"] == "llama_cpp":
         return _chat_llama_cpp(entry, message, history, temperature, timeout)
     elif entry["engine"] == "openvino":
-        return _chat_openvino(entry, message, history, max_tokens)
+        return _chat_openvino(entry, message, history, max_tokens, temperature)
     else:
         raise InferenceError(f"Unknown engine '{entry['engine']}' for model '{model_id}'.")
 

@@ -5,6 +5,7 @@ import { useState } from "react";
 interface ModelInfo {
   id: string;
   status: string;
+  engine?: string;  // optional so it doesn't break when used for STT models (no engine field there)
 }
 
 interface ModelPanelProps {
@@ -96,7 +97,7 @@ export default function ModelPanel({
           <option value="">-- no model selected --</option>
           {models.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.id} ({m.status})
+              {m.id} {m.engine ? `— ${m.engine} ` : ""}({m.status})
             </option>
           ))}
         </select>

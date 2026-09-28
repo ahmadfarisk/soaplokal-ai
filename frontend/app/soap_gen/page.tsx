@@ -73,6 +73,7 @@ export default function SoapNotePage() {
         body: JSON.stringify({
           model_id: llmModelId,
           message: buildSoapPrompt(transcript),
+          max_tokens: 1500,  
         }),
       });
       const data = await res.json();
