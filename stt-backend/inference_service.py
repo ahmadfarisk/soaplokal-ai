@@ -9,7 +9,7 @@ import models_registry
 class InferenceError(Exception):
   """Raised for load/unload/transcribe failures the caller needs to handle explicitly."""
 
-
+DEFAULT_OV_DEVICE = "CPU"
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ _loaded_pipelines: dict[str, object] = {}
 # Load / Unload
 
 # Load model
-def load_model(model_id: str, local_path: str, device: str = "AUTO"):
+def load_model(model_id: str, local_path: str, device: str = DEFAULT_OV_DEVICE):
   # Returns if model is already loaded
   if model_id in _loaded_pipelines: 
     return
