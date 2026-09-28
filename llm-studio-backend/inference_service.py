@@ -169,6 +169,7 @@ def _unload_llama_cpp(model_id: str, entry: dict) -> None:
 
 def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, params: dict, timeout: int) -> dict:
     messages = (history or []) + [{"role": "user", "content": message}]
+    start_time = time.perf_counter()
     try:
         response = requests.post(
             f"http://localhost:{entry['port']}/v1/chat/completions",
@@ -191,8 +192,15 @@ def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, param
         raise InferenceError(f"Request timed out after {timeout}s.")
     except requests.exceptions.HTTPError as e:
         raise InferenceError(f"llama-server returned an error: {e}")
+    
+    elapsed = time.perf_counter() - start_time
 
-    return response.json()  # already in the {"choices": [{"message": {"content": ...}}]} shape
+
+    data = response.json()  # already in the {"choices": [{"message": {"content": ...}}]} shape
+    data["metrics"] = { "processing_time": round(elapsed, 3)}
+
+
+    return data
 
 
 # ---------------------------------------------------------------------------
@@ -250,15 +258,23 @@ def _chat_openvino(entry: dict, message: str, history: list[dict] | None, params
             )
         else:
             generate_kwargs["do_sample"] = False
-
+        
+        start_time = time.perf_counter()
         outputs = model.generate(**inputs, **generate_kwargs)
         text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        elapsed = time.perf_counter() - start_time
+
     except Exception as e:
         raise InferenceError(f"OpenVINO generation failed: {e}")
 
     # Normalized to match llama_cpp's response shape, so main.py and the
     # frontend never need to know which engine actually answered.
-    return {"choices": [{"message": {"content": text}}]}
+    return {
+        "choices": [{"message": {"content": text}}],
+        "metrics": {
+            "processing_time": round(elapsed, 3),
+        }
+    }
 
 
 # ---------------------------------------------------------------------------

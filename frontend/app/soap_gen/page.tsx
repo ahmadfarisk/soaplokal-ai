@@ -71,6 +71,8 @@ export default function SoapNotePage() {
 
   const [genParams, setGenParams] = useState<GenerationParams>(DEFAULT_GENERATION_PARAMS);
 
+  const [llmTime, setLLMTime] = useState(0.0);
+
 
   async function handleGenerate() {
     if (!transcript.trim() || !llmModelId) return;
@@ -95,6 +97,7 @@ export default function SoapNotePage() {
       }
       const reply = data.choices?.[0]?.message?.content ?? "";
       setSoapNote(reply);
+      setLLMTime(data.metrics.processing_time);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -173,6 +176,11 @@ export default function SoapNotePage() {
               {(!transcript.trim() || !llmModelId) && (
                 <p className="mt-2 text-xs text-gray-400">
                   Requires a transcript and a loaded LLM model.
+                </p>
+              )}
+              {(llmTime > 0) && (
+                <p className="mt-2 text-xs text-gray-400">
+                  SOAP Generated in: {llmTime}
                 </p>
               )}
             </section>

@@ -186,8 +186,8 @@ async def transcribe(model_id: str, file: UploadFile = File(...)):
         tmp_path = tmp.name
 
     try:
-        text = inference_service.transcribe(model_id, tmp_path)
-        return {"text": text}
+        result = inference_service.transcribe(model_id, tmp_path)
+        return result
     except InferenceError as e:
         raise HTTPException(status_code=400, detail=str(e))
     finally:

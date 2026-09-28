@@ -4,6 +4,8 @@ import logging
 from optimum.intel import OVModelForSpeechSeq2Seq
 from transformers import AutoProcessor, pipeline
 
+import time
+
 import models_registry
 
 class InferenceError(Exception):
@@ -69,6 +71,8 @@ def transcribe(model_id: str, audio_path: str) -> str:
   pipe = _loaded_pipelines.get(model_id)
   if pipe is None:
     raise InferenceError(f"Model '{model_id}' is not loaded.")
+  
+  start_time = time.perf_counter()
   result = pipe(
     audio_path,
     return_timestamps=True,
@@ -77,7 +81,14 @@ def transcribe(model_id: str, audio_path: str) -> str:
       "no_repeat_ngram_size": 3,
     },
   )
-  return result["text"]
+  elapsed = time.perf_counter() - start_time
+
+  return {
+    "text": result["text"],
+    "metrics": {
+      "processing_seconds": round(elapsed, 3),
+    },
+  }
 
 
 

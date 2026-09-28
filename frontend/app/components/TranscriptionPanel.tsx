@@ -25,6 +25,7 @@ export default function TranscriptionPanel({
 }: TranscriptionPanelProps) {
   const [file, setFile] = useState<File | null>(null);
   const [transcribing, setTranscribing] = useState(false);
+  const [transcribeTime, setTranscribeTime] = useState(0.0);
 
   async function handleTranscribe() {
     if (!file || !loadedModelId) return;
@@ -43,6 +44,7 @@ export default function TranscriptionPanel({
         onError(data.detail || `Transcription failed (${res.status})`);
       } else {
         onTranscriptChange(data.text);
+        setTranscribeTime(data.metrics.processing_seconds);
       }
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
@@ -70,8 +72,10 @@ export default function TranscriptionPanel({
           {transcribing ? "Transcribing…" : "Transcribe"}
         </button>
       </div>
-      {!loadedModelId && (
+      {!loadedModelId ? (
         <p className="mb-3 text-xs text-gray-400">Load an STT model above before transcribing.</p>
+      ):(
+        <p className="mb-3 text-xs text-gray-400">Transcribe time: {transcribeTime}</p>
       )}
 
       <textarea
