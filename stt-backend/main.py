@@ -34,10 +34,17 @@ whisper_model_choices = [
 import logging
 import os
 import tempfile
+from pathlib import Path
+import wave
 
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
+
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket
+
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from vad_service import VoiceActivityDetector, SAMPLE_RATE
 
 import download_service
 import inference_service
@@ -192,3 +199,52 @@ async def transcribe(model_id: str, file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         os.remove(tmp_path)  # always clean up, even if transcription fails
+
+
+# ---------------------------------------------------------------------------
+# websocket endpoints
+# ---------------------------------------------------------------------------
+
+CHUNKS_DIR = Path(__file__).parent / "vad_test_chunks"
+CHUNKS_DIR.mkdir(exist_ok=True)
+
+@app.websocket("/ws/live-transcribe")
+async def live_transcribe(websocket: WebSocket, model_id: str):
+    await websocket.accept()
+    vad = VoiceActivityDetector(aggressiveness=2)
+    chunk_count = 0
+    _transcribed: list = []
+ 
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            finalized_chunk = vad.feed(data)
+ 
+            if finalized_chunk is not None:
+                chunk_count += 1
+
+                logger.info(f"Phrase {chunk_count} detected.")
+                # path = CHUNKS_DIR / f"chunk_{chunk_count:03d}.wav"
+                # _save_wav(path, finalized_chunk)
+                # logger.info(f"Saved {path} ({len(finalized_chunk)} bytes)")
+                # await websocket.send_json({"type": "phrase_boundary", "chunk": chunk_count})
+
+                audio_array = inference_service._resample_chunk(finalized_chunk)
+                # audio_array = inference_service._reduce_noise(inference_service._resample_chunk(finalized_chunk))
+                logger.info(f"Phrase {chunk_count} audio resampled.")
+                text = await run_in_threadpool(inference_service.transcribe_array, model_id, audio_array)
+                logger.info(f"Phrase {chunk_count} audio transcribed.")
+                _transcribed.append(text)
+                await websocket.send_json({"type": "phrase", "text": text})
+ 
+    except Exception:
+        logger.exception("Connection closed.")
+
+
+def _save_wav(path: Path, pcm_bytes: bytes) -> None:
+    """Writes raw 16-bit PCM bytes as a playable .wav file."""
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)  # 16-bit
+        wf.setframerate(SAMPLE_RATE)
+        wf.writeframes(pcm_bytes)

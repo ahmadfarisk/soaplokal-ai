@@ -9,6 +9,7 @@ import GenerationParamsPanel, {
   DEFAULT_GENERATION_PARAMS,
   GenerationParams,
 } from "@/components/GenerationParamsPanel";
+import LiveTranscriptionPanel from "@/components/LiveTranscriptionPanel";
 
 const STT_API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
@@ -138,6 +139,14 @@ export default function SoapNotePage() {
             />
 
             <TranscriptionPanel
+              apiUrl={STT_API_URL}
+              loadedModelId={sttModelId}
+              transcript={transcript}
+              onTranscriptChange={setTranscript}
+              onError={setError}
+            />
+
+            <LiveTranscriptionPanel
               apiUrl={STT_API_URL}
               loadedModelId={sttModelId}
               transcript={transcript}

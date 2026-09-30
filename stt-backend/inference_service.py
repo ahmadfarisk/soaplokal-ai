@@ -1,10 +1,14 @@
 
 import logging
+import time
 
+# For OpenVINO
 from optimum.intel import OVModelForSpeechSeq2Seq
 from transformers import AutoProcessor, pipeline
 
-import time
+import numpy as np
+import librosa
+import noisereduce
 
 import models_registry
 
@@ -91,6 +95,41 @@ def transcribe(model_id: str, audio_path: str) -> str:
   }
 
 
+# Transcribe array
+def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int = 16000) -> str:
+  pipe = _loaded_pipelines.get(model_id)
+  if pipe is None:
+    raise InferenceError(f"Model '{model_id}' is not loaded.")
+  
+  start_time = time.perf_counter()
+
+  result = pipe({"array": audio_array, "sampling_rate": sampling_rate}, 
+                generate_kwargs={
+                  "repetition_penalty": 1.3,
+                  "no_repeat_ngram_size": 3,
+                  "language": "indonesian",
+                  "task": "transcribe",
+                  },
+                )
+  
+  elapsed = time.perf_counter() - start_time
+
+  return result["text"]
+  # return {
+  #   "text": result["text"],
+  #   "metrics": {
+  #     "processing_seconds": round(elapsed, 3),
+  #   },
+  # }
+
+
+def _resample_chunk(pcm_bytes: bytes, orig_sr: int = 48000, target_sr: int = 16000) -> np.ndarray:
+    audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+    return librosa.resample(audio, orig_sr=orig_sr, target_sr=target_sr)
+
+def _reduce_noise(arr: np.ndarray, target_sr: int = 16000):
+  _reduced_array = noisereduce.reduce_noise(y=arr, sr=target_sr)
+  return _reduced_array
 
 
 if __name__ == "__main__":
