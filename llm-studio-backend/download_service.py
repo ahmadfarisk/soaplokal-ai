@@ -76,13 +76,13 @@ def download(
 
         models_registry.add_model(model_id, engine=engine, repo_id=repo_id, filename=filename)
 
-        existing_path = _existing_gguf_path(filename)
-        if existing_path is not None:
-            logger.info(f"[{model_id}] Found existing file at {existing_path}, skipping download.")
-            models_registry.update_status(
-                model_id, status="ready", local_path=str(existing_path), size_bytes=existing_path.stat().st_size
-            )
-            return
+        # existing_path = _existing_gguf_path(filename)
+        # if existing_path is not None:
+        #     logger.info(f"[{model_id}] Found existing file at {existing_path}, skipping download.")
+        #     models_registry.update_status(
+        #         model_id, status="ready", local_path=str(existing_path), size_bytes=existing_path.stat().st_size
+        #     )
+        #     return
 
         _download_with_retries(model_id, lambda: _fetch_gguf(model_id, repo_id, filename))
 
@@ -93,13 +93,13 @@ def download(
 
         models_registry.add_model(model_id, engine=engine, hf_model_id=hf_model_id)
 
-        existing_path = _existing_openvino_path(model_id)
-        if existing_path is not None:
-            logger.info(f"[{model_id}] Found existing folder at {existing_path}, skipping download.")
-            models_registry.update_status(
-                model_id, status="ready", local_path=str(existing_path), size_bytes=_folder_size(existing_path)
-            )
-            return
+        # existing_path = _existing_openvino_path(model_id)
+        # if existing_path is not None:
+        #     logger.info(f"[{model_id}] Found existing folder at {existing_path}, skipping download.")
+        #     models_registry.update_status(
+        #         model_id, status="ready", local_path=str(existing_path), size_bytes=_folder_size(existing_path)
+        #     )
+        #     return
 
         _download_with_retries(model_id, lambda: _fetch_openvino(model_id, hf_model_id))
 

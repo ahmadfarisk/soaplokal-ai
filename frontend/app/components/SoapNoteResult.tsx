@@ -10,16 +10,31 @@ interface SoapSections {
 
 
 /**
+ * Removes <think>...</think> blocks some "reasoning" models prepend to their
+ * answer. Handles multiple blocks, and also handles an unclosed tag (the
+ * model got cut off by max_tokens mid-thought) by dropping everything from
+ * <think> to the end, so no stray reasoning leaks into the note.
+ */
+export function stripThinking(raw: string): string {
+  let text = raw.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  text = text.replace(/<think>[\s\S]*$/i, "");
+  return text.trim();
+}
+
+/**
  * Splits the LLM's raw response into the four SOAP sections. Relies on the
  * prompt (see page.tsx) instructing the model to use these exact headers.
  * Falls back gracefully if the model didn't follow the format perfectly —
  * anything unmatched lands in "subjective" so nothing silently disappears.
+ * Strips <think>...</think> reasoning blocks before parsing, so a thinking
+ * model's scratchpad never ends up inside a SOAP section.
  */
 export function parseSoapNote(raw: string): SoapSections {
   const sections: SoapSections = { subjective: "", objective: "", assessment: "", plan: "" };
 
+  const cleaned = stripThinking(raw);
   const pattern = /(Subjective|Objective|Assessment|Plan)\s*:?\s*\n?/gi;
-  const parts = raw.split(pattern);
+  const parts = cleaned.split(pattern);
 
   // raw.split with a capturing group interleaves: [textBefore, header, textAfter, header, textAfter, ...]
   let currentKey: keyof SoapSections | null = null;

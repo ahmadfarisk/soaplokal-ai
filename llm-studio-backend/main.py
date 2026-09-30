@@ -118,7 +118,7 @@ def download_model(req: DownloadRequest, background_tasks: BackgroundTasks):
     GET /models/{model_id}/status to track progress/completion.
     """
     existing = models_registry.get_model(req.model_id)
-    if existing and existing["status"] == "ready" and not req.force:
+    if existing and existing["status"] == "ready":
         return {"status": "already_downloaded", "model": existing}
 
     # background_tasks.add_task(
@@ -184,3 +184,7 @@ def chat(req: ChatRequest):
     except InferenceError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return result
+
+@app.post("/models/{model_id}/retry")
+def retry(model_id: str):
+    models_registry.update_status(model_id, "error")
