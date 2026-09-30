@@ -25,3 +25,4 @@ __pycache__/
 kernel.errors.txt
 
 z12ztest/
+vad_test_chunks/
