@@ -28,7 +28,7 @@ SILENCE_FRAMES_TO_END_PHRASE = 15
 # that minimum duration, silence is ignored entirely and the phrase keeps
 # accumulating — this stops a short utterance from being finalized the
 # instant it starts, purely because the very next frame happened to be quiet.
-MIN_PHRASE_DURATION_MS = 500
+MIN_PHRASE_DURATION_MS = 1500
 MIN_PHRASE_DURATION_FRAMES = int(MIN_PHRASE_DURATION_MS / FRAME_DURATION_MS)
  
 # Safety valve: if a phrase somehow keeps growing forever (e.g. continuous

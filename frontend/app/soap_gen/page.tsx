@@ -40,6 +40,11 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
     label: 'Whisper V3 Large (INT8)',
     extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
   },
+  {
+    model_id: 'whisper-large-v3-turbo-int8-ov',
+    label: 'Whisper V3 Large (INT8) Turbo',
+    extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-int8-ov' },
+  },
 ];
 
 // function buildSoapPrompt(transcript: string): string {
