@@ -12,6 +12,10 @@ audio block.
 
 import webrtcvad
 
+from collections import deque
+
+
+
 SAMPLE_RATE = 48000
 FRAME_DURATION_MS = 30  # webrtcvad only accepts 10, 20, or 30
 BYTES_PER_SAMPLE = 2  # 16-bit PCM
@@ -38,11 +42,14 @@ MAX_PHRASE_DURATION_FRAMES = int(MAX_PHRASE_DURATION_MS / FRAME_DURATION_MS)
 MIN_SPEECH_FRAMES_TO_KEEP = 5  # discard chunks shorter than ~150ms (coughs, clicks)
 
 
+PADDING_FRAMES = 10  # ~300ms (* 30ms) lookback — frames kept even while nothing's been classified as speech yet
+
+
 class VoiceActivityDetector:
     """One instance per live session. Feed it raw PCM bytes as they arrive;
     it tells you when a phrase is finished."""
 
-    def __init__(self, aggressiveness: int = 2):
+    def __init__(self, aggressiveness: int = 3):
         # aggressiveness: 0 (lenient) to 3 (strict) — how easily background
         # noise gets mistaken for speech. Start at 2, tune from real testing.
         self._vad = webrtcvad.Vad(aggressiveness)
@@ -50,6 +57,9 @@ class VoiceActivityDetector:
         self._current_chunk = bytearray()
         self._silence_run = 0
         self._has_had_speech = False
+
+        # For padding
+        # self._padding_buffer = deque(maxlen=PADDING_FRAMES)
 
     def feed(self, audio_bytes: bytes) -> bytes | None:
         """
@@ -67,12 +77,26 @@ class VoiceActivityDetector:
             frame = data[offset : offset + FRAME_SIZE_BYTES]
             offset += FRAME_SIZE_BYTES
 
+            # self._padding_buffer.append(frame)
+
             is_speech = self._vad.is_speech(frame, SAMPLE_RATE)
 
             if is_speech:
+                # if not self._has_had_speech:
+                #     # First speech frame of a new phrase — prepend the lookback buffer
+                #     # so a word's onset isn't lost to a frame that got classified as silence.
+                #     self._current_chunk.extend(b"".join(self._padding_buffer))
+                #     # self._frame_count += len(self._padding_buffer) - 1  # -1 since this frame is counted below either way
+                # self._current_chunk.extend(frame)
+                # # self._frame_count += 1
+                # self._silence_run = 0
+                # self._has_had_speech = True
+
+                # OLD one without padding
                 self._current_chunk.extend(frame)
                 self._silence_run = 0
                 self._has_had_speech = True
+
             elif self._has_had_speech:
                 # Keep a little trailing silence in the chunk — sounds more
                 # natural than cutting off the instant speech stops.
@@ -96,6 +120,8 @@ class VoiceActivityDetector:
         self._current_chunk = bytearray()
         self._silence_run = 0
         self._has_had_speech = False
+
+        # self._padding_buffer.clear()
 
         min_bytes = MIN_SPEECH_FRAMES_TO_KEEP * FRAME_SIZE_BYTES
         if len(chunk) < min_bytes:

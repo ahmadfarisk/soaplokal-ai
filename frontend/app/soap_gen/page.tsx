@@ -57,7 +57,7 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
 // }
 
 function buildSoapPrompt(transcript: string): string {
-  return `Anda adalah asisten dokumentasi. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
+  return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
 
 Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan.
 
