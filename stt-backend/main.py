@@ -36,10 +36,12 @@ import os
 import tempfile
 from pathlib import Path
 import wave
+import traceback
+import numpy as np
 
 from starlette.concurrency import run_in_threadpool
 
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -230,16 +232,45 @@ async def live_transcribe(websocket: WebSocket, model_id: str):
                 # await websocket.send_json({"type": "phrase_boundary", "chunk": chunk_count})
 
                 audio_array = inference_service._resample_chunk(finalized_chunk)
+                # audio_array = normalize_audio(audio_array)
                 # audio_array = inference_service._reduce_noise(inference_service._resample_chunk(finalized_chunk))
                 logger.info(f"Phrase {chunk_count} audio resampled.")
                 text = await run_in_threadpool(inference_service.transcribe_array, model_id, audio_array)
+                
+                if is_hallucination(text):
+                    logger.info(f"Phrase {chunk_count} transcription failed (Hallucination).")
+                    continue
+
                 logger.info(f"Phrase {chunk_count} audio transcribed.")
                 _transcribed.append(text)
-                await websocket.send_json({"type": "phrase", "text": text})
+                try:
+                    await websocket.send_json({"type": "phrase", "text": text})
+                except WebSocketDisconnect:
+                    logger.info("Client disconnected before result could be sent.")
+                    break
  
-    except Exception:
-        logger.exception("Connection closed.")
+    except Exception as e:
+        logger.error(f"WebSocket disconnected: {e}")
+        traceback.print_exc()
 
+
+KNOWN_HALLUCINATIONS = {
+    "terima kasih kerana menonton",
+    "sampai jumpa di video selanjutnya",
+    "selamat menikmati",
+    "jangan lupa tolong tekan like dan subscribe",
+    "terima kasih telah menonton",
+    "terima kasih banyak untuk menonton",
+}
+
+def is_hallucination(text: str) -> bool:
+    return text.strip().lower().rstrip(".!") in KNOWN_HALLUCINATIONS
+
+def normalize_audio(audio: np.ndarray) -> np.ndarray:
+    peak = np.abs(audio).max()
+    if peak > 0:
+        return audio / peak * 0.95  # normalize to 95% of full scale, avoid clipping
+    return audio
 
 def _save_wav(path: Path, pcm_bytes: bytes) -> None:
     """Writes raw 16-bit PCM bytes as a playable .wav file."""

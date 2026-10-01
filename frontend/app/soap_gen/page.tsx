@@ -79,6 +79,9 @@ export default function SoapNotePage() {
 
   const [llmTime, setLLMTime] = useState(0.0);
 
+  function resetError() {
+    setError(null)
+  }
 
   async function handleGenerate() {
     if (!transcript.trim() || !llmModelId) return;
@@ -119,8 +122,14 @@ export default function SoapNotePage() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 rounded-md bg-red-50 text-red-800 text-sm px-4 py-3">
+          <div className="mb-6 rounded-md bg-red-50 text-red-800 text-sm px-4 py-3 flex justify-between">
             {error}
+            <button
+              className="cursor-pointer"
+              onClick={resetError}
+            >
+              X
+            </button>
           </div>
         )}
 
