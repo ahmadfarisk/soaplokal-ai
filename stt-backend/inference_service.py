@@ -104,9 +104,8 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
   start_time = time.perf_counter()
 
   result = pipe({"array": audio_array, "sampling_rate": sampling_rate}, 
+                return_timestamps=True,
                 generate_kwargs={
-                  # "repetition_penalty": 1.3,
-                  # "no_repeat_ngram_size": 3,
                   "repetition_penalty": 1.1,
                   "no_repeat_ngram_size": 3,
                   "language": "indonesian",
@@ -125,7 +124,7 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
   # }
 
 
-def _resample_chunk(pcm_bytes: bytes, orig_sr: int = 48000, target_sr: int = 16000) -> np.ndarray:
+def resample_chunk(pcm_bytes: bytes, orig_sr: int = 48000, target_sr: int = 16000) -> np.ndarray:
     audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
     return librosa.resample(audio, orig_sr=orig_sr, target_sr=target_sr)
 

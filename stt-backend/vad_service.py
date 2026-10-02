@@ -23,9 +23,8 @@ FRAME_SIZE_BYTES = int(SAMPLE_RATE * (FRAME_DURATION_MS / 1000) * BYTES_PER_SAMP
 
 # --- Tuning knobs -----------------------------------------------------------
 # If phrases cut off too early mid-sentence, raise SILENCE_FRAMES_TO_END_PHRASE
-# first — a natural breath or pause before the next clause is often longer
-# than you'd expect. 30 frames * 30ms = ~900ms; try 40 (~1.2s) if still too eager.
-SILENCE_FRAMES_TO_END_PHRASE = 15
+# first. 30 frames * 30ms = ~900ms; try 40 (~1.2s) if still too eager.
+SILENCE_FRAMES_TO_END_PHRASE = 20
  
 # How many consecutive frames of silence are needed before a phrase is allowed
 # to end AT ALL, once it's already reached MIN_PHRASE_DURATION_MS long. Below

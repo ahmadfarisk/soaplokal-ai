@@ -151,7 +151,7 @@ export default function LiveTranscriptionPanel({
       <textarea
         value={transcript}
         onChange={(e) => onTranscriptChange(e.target.value)}
-        placeholder="Live transcript will build here as you speak. Editable afterward, same as the uploaded-file transcript."
+        placeholder="Live transcript will build here as you speak. Editable afterward."
         rows={6}
         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm resize-none"
       />

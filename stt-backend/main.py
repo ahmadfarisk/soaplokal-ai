@@ -30,7 +30,7 @@ whisper_model_choices = [
 ]
 
 
-
+import asyncio
 import logging
 import os
 import tempfile
@@ -51,7 +51,7 @@ from vad_service import VoiceActivityDetector, SAMPLE_RATE
 import download_service
 import inference_service
 import models_registry
-from inference_service import InferenceError
+from inference_service import InferenceError, resample_chunk
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -211,47 +211,79 @@ CHUNKS_DIR = Path(__file__).parent / "vad_test_chunks"
 CHUNKS_DIR.mkdir(exist_ok=True)
 
 @app.websocket("/ws/live-transcribe")
-async def live_transcribe(websocket: WebSocket, model_id: str):
+async def live_transcribe(websocket: WebSocket):
     await websocket.accept()
+ 
+    model_id = websocket.query_params.get("model_id")
+    if not model_id:
+        await websocket.close(code=1008, reason="model_id query param required")
+        return
+ 
     vad = VoiceActivityDetector(aggressiveness=2)
-    chunk_count = 0
-    _transcribed: list = []
+    audio_queue: asyncio.Queue[bytes] = asyncio.Queue()
  
-    try:
+    async def reader():
+        """Does nothing but keep reading from the socket — never blocked by
+        transcription, so uvicorn's keepalive pings always get answered."""
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                await audio_queue.put(data)
+        except WebSocketDisconnect:
+            await audio_queue.put(None)  # signal the processor to stop
+ 
+    async def processor():
+        """Pulls audio off the queue, runs VAD, transcribes finalized
+        phrases, and sends results back — independently of the reader."""
+        chunk_count = 0
         while True:
-            data = await websocket.receive_bytes()
-            finalized_chunk = vad.feed(data)
+            data = await audio_queue.get()
+            if data is None:
+                break
  
-            if finalized_chunk is not None:
-                chunk_count += 1
-
-                logger.info(f"Phrase {chunk_count} detected.")
-                # path = CHUNKS_DIR / f"chunk_{chunk_count:03d}.wav"
-                # _save_wav(path, finalized_chunk)
-                # logger.info(f"Saved {path} ({len(finalized_chunk)} bytes)")
-                # await websocket.send_json({"type": "phrase_boundary", "chunk": chunk_count})
-
-                audio_array = inference_service._resample_chunk(finalized_chunk)
-                # audio_array = normalize_audio(audio_array)
-                # audio_array = inference_service._reduce_noise(inference_service._resample_chunk(finalized_chunk))
+            finalized_chunk = vad.feed(data)
+            if finalized_chunk is None:
+                continue
+ 
+            chunk_count += 1
+            try:
+                # Resampling
+                audio_array = resample_chunk(finalized_chunk)
                 logger.info(f"Phrase {chunk_count} audio resampled.")
-                text = await run_in_threadpool(inference_service.transcribe_array, model_id, audio_array)
-                
+
+                _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", finalized_chunk)
+
+                # Transcribe in threadpool
+                text = await run_in_threadpool(
+                    inference_service.transcribe_array, model_id, audio_array
+                )
+                logger.info(f"Phrase {chunk_count} audio transcribed.")
+
+                # Hallucination check
                 if is_hallucination(text):
                     logger.info(f"Phrase {chunk_count} transcription failed (Hallucination).")
                     continue
+                
+                # Send result
+                await websocket.send_json({"type": "phrase", "text": text})
 
-                logger.info(f"Phrase {chunk_count} audio transcribed.")
-                _transcribed.append(text)
-                try:
-                    await websocket.send_json({"type": "phrase", "text": text})
-                except WebSocketDisconnect:
-                    logger.info("Client disconnected before result could be sent.")
-                    break
+            # Error detection stuff
+            except WebSocketDisconnect:
+                logger.info("Client disconnected before result could be sent.")
+                break
+            except Exception as e:
+                logger.error(f"Error processing phrase {chunk_count}: {e}")
+                # Don't let one bad chunk kill the whole session — keep going.
  
-    except Exception as e:
-        logger.error(f"WebSocket disconnected: {e}")
-        traceback.print_exc()
+    reader_task = asyncio.create_task(reader())
+    processor_task = asyncio.create_task(processor())
+ 
+    try:
+        await processor_task  # the session is "done" once the processor stops
+    finally:
+        reader_task.cancel()
+        logger.info("Live transcription session ended.")
+
 
 
 KNOWN_HALLUCINATIONS = {
@@ -266,11 +298,13 @@ KNOWN_HALLUCINATIONS = {
 def is_hallucination(text: str) -> bool:
     return text.strip().lower().rstrip(".!") in KNOWN_HALLUCINATIONS
 
-def normalize_audio(audio: np.ndarray) -> np.ndarray:
-    peak = np.abs(audio).max()
-    if peak > 0:
-        return audio / peak * 0.95  # normalize to 95% of full scale, avoid clipping
-    return audio
+
+# def normalize_audio(audio: np.ndarray) -> np.ndarray:
+#     peak = np.abs(audio).max()
+#     if peak > 0:
+#         return audio / peak * 0.95  # normalize to 95% of full scale, avoid clipping
+#     return audio
+
 
 def _save_wav(path: Path, pcm_bytes: bytes) -> None:
     """Writes raw 16-bit PCM bytes as a playable .wav file."""
