@@ -1,4 +1,3 @@
-
 """
 main.py (STT service)
 
@@ -31,6 +30,7 @@ whisper_model_choices = [
 
 
 import asyncio
+import json
 import logging
 import os
 import tempfile
@@ -220,64 +220,116 @@ async def live_transcribe(websocket: WebSocket):
         return
  
     vad = VoiceActivityDetector(aggressiveness=2)
-    audio_queue: asyncio.Queue[bytes] = asyncio.Queue()
+    # Each item is ("audio", bytes) | ("stop", None) | ("disconnect", None)
+    audio_queue: asyncio.Queue[tuple[str, bytes | None]] = asyncio.Queue()
  
     async def reader():
         """Does nothing but keep reading from the socket — never blocked by
-        transcription, so uvicorn's keepalive pings always get answered."""
+        transcription, so uvicorn's keepalive pings always get answered.
+        Branches on message type so it can tell audio bytes apart from the
+        client's {"type": "stop"} control message."""
         try:
             while True:
-                data = await websocket.receive_bytes()
-                await audio_queue.put(data)
+                message = await websocket.receive()
+
+                if message["type"] == "websocket.disconnect":
+                    await audio_queue.put(("disconnect", None))
+                    return
+
+                if message.get("bytes") is not None:
+                    await audio_queue.put(("audio", message["bytes"]))
+                elif message.get("text") is not None:
+                    try:
+                        payload = json.loads(message["text"])
+                    except json.JSONDecodeError:
+                        continue
+                    if payload.get("type") == "stop":
+                        logger.info("Received stop signal — will flush and drain queue.")
+                        await audio_queue.put(("stop", None))
+                        return  # stop listening for more audio once stop is requested
         except WebSocketDisconnect:
-            await audio_queue.put(None)  # signal the processor to stop
+            await audio_queue.put(("disconnect", None))
  
+    async def process_chunk(chunk_bytes: bytes, chunk_count: int) -> None:
+        """Runs the save/filter/resample/transcribe/hallucination-check/send
+        pipeline for one finalized chunk — shared by both the normal VAD
+        path and the flush-on-stop path, so logging and behavior match."""
+        try:
+            _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", chunk_bytes)
+
+            if not is_likely_real_speech(chunk_bytes):
+                logger.info(f"Phrase {chunk_count} rejected as non-speech (ZCR/energy check).")
+                return
+
+            # Resampling
+            audio_array = resample_chunk(chunk_bytes)
+            logger.info(f"Phrase {chunk_count} audio resampled.")
+
+            # Transcribe in threadpool
+            text = await run_in_threadpool(
+                inference_service.transcribe_array, model_id, audio_array
+            )
+            logger.info(f"Phrase {chunk_count} audio transcribed.")
+
+            # Hallucination check
+            if is_hallucination(text):
+                logger.info(f"Phrase {chunk_count} transcription failed (Hallucination).")
+                return
+
+            # Send result
+            await websocket.send_json({"type": "phrase", "text": text})
+
+        except WebSocketDisconnect:
+            logger.info("Client disconnected before result could be sent.")
+            raise
+        except Exception as e:
+            logger.error(f"Error processing phrase {chunk_count}: {e}")
+            # Don't let one bad chunk kill the whole session — keep going.
+
     async def processor():
         """Pulls audio off the queue, runs VAD, transcribes finalized
-        phrases, and sends results back — independently of the reader."""
+        phrases, and sends results back — independently of the reader.
+        On "stop", finishes draining whatever's already queued, flushes
+        any trailing buffered speech, then sends a "done" acknowledgment
+        before the session ends."""
         chunk_count = 0
         while True:
-            data = await audio_queue.get()
-            if data is None:
+            kind, data = await audio_queue.get()
+
+            if kind == "disconnect":
+                logger.info("Live transcription session ended (disconnect).")
                 break
- 
+
+            if kind == "stop":
+                # Flush whatever speech was buffered but never finalized —
+                # e.g. the user's last sentence, with no pause yet.
+                finalized_chunk = vad.flush()
+                if finalized_chunk is not None:
+                    chunk_count += 1
+                    try:
+                        await process_chunk(finalized_chunk, chunk_count)
+                    except WebSocketDisconnect:
+                        break
+                else:
+                    logger.info("Nothing left to flush on stop.")
+
+                try:
+                    await websocket.send_json({"type": "done"})
+                    logger.info("Sent done acknowledgment, session finishing.")
+                except WebSocketDisconnect:
+                    logger.info("Client already gone before done could be sent.")
+                break
+
+            # kind == "audio"
             finalized_chunk = vad.feed(data)
             if finalized_chunk is None:
                 continue
- 
+
             chunk_count += 1
             try:
-                _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", finalized_chunk)
-
-                if not is_likely_real_speech(finalized_chunk):
-                    logger.info(f"Phrase {chunk_count} rejected as non-speech (ZCR/energy check).")
-                    continue
-
-                # Resampling
-                audio_array = resample_chunk(finalized_chunk)
-                logger.info(f"Phrase {chunk_count} audio resampled.")
-
-                # Transcribe in threadpool
-                text = await run_in_threadpool(
-                    inference_service.transcribe_array, model_id, audio_array
-                )
-                logger.info(f"Phrase {chunk_count} audio transcribed.")
-
-                # Hallucination check
-                if is_hallucination(text):
-                    logger.info(f"Phrase {chunk_count} transcription failed (Hallucination).")
-                    continue
-                
-                # Send result
-                await websocket.send_json({"type": "phrase", "text": text})
-
-            # Error detection stuff
+                await process_chunk(finalized_chunk, chunk_count)
             except WebSocketDisconnect:
-                logger.info("Client disconnected before result could be sent.")
                 break
-            except Exception as e:
-                logger.error(f"Error processing phrase {chunk_count}: {e}")
-                # Don't let one bad chunk kill the whole session — keep going.
  
     reader_task = asyncio.create_task(reader())
     processor_task = asyncio.create_task(processor())
@@ -297,6 +349,7 @@ KNOWN_HALLUCINATIONS = {
     "jangan lupa tolong tekan like dan subscribe",
     "terima kasih telah menonton",
     "terima kasih banyak untuk menonton",
+    "selamat menikmati",
 }
 
 def is_hallucination(text: str) -> bool:
@@ -346,7 +399,7 @@ def is_likely_real_speech(pcm_bytes: bytes, sample_rate: int = 48000) -> bool:
 
     # Tune these two thresholds against your own click vs. speech test cases.
     ZCR_MAX = 0.101 # clicks tend to run higher than this
-    SPREAD_MIN = 0.04 # clicks concentrate energy in very few windows
+    SPREAD_MIN = 0.03 # clicks concentrate energy in very few windows
 
     logging.info(f"zcr={zcr:.3f} spread={spread_ratio:.3f}")
 

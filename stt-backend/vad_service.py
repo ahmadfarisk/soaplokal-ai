@@ -128,6 +128,7 @@ class VoiceActivityDetector:
         self._current_chunk = bytearray()
         self._silence_run = 0
         self._has_had_speech = False
+        self._frame_count = 0  # was missing — without this, frame_count kept growing across phrases
 
         # self._padding_buffer.clear()
 
@@ -135,3 +136,19 @@ class VoiceActivityDetector:
         if len(chunk) < min_bytes:
             return None  # too short — likely noise, discard rather than transcribe
         return chunk
+
+    def flush(self) -> bytes | None:
+        """
+        Force-finalizes whatever's currently buffered, bypassing the normal
+        silence-wait and MIN_PHRASE_DURATION_FRAMES gating entirely. Call
+        this once, when the user clicks Stop, so trailing speech since the
+        last finalized phrase isn't silently discarded.
+
+        Still applies the same MIN_SPEECH_FRAMES_TO_KEEP check as a normal
+        finalize — if there's only a sliver of audio buffered (or nothing
+        was ever classified as speech at all), this returns None rather
+        than sending a near-empty chunk to Whisper.
+        """
+        if not self._has_had_speech:
+            return None  # nothing buffered — e.g. Stop was clicked during silence
+        return self._finalize_if_long_enough()
