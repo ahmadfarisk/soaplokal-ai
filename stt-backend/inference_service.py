@@ -106,7 +106,7 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
   result = pipe({"array": audio_array, "sampling_rate": sampling_rate}, 
                 return_timestamps=True,
                 generate_kwargs={
-                  "repetition_penalty": 1.1,
+                  "repetition_penalty": 1.2,
                   "no_repeat_ngram_size": 3,
                   "language": "indonesian",
                   "task": "transcribe",

@@ -31,13 +31,14 @@ SILENCE_FRAMES_TO_END_PHRASE = 20
 # that minimum duration, silence is ignored entirely and the phrase keeps
 # accumulating — this stops a short utterance from being finalized the
 # instant it starts, purely because the very next frame happened to be quiet.
-MIN_PHRASE_DURATION_MS = 1500
+MIN_PHRASE_DURATION_MS = 2000
 MIN_PHRASE_DURATION_FRAMES = int(MIN_PHRASE_DURATION_MS / FRAME_DURATION_MS)
  
 # Safety valve: if a phrase somehow keeps growing forever (e.g. continuous
 # speech with no real pause), force a cut so it doesn't grow unbounded.
 MAX_PHRASE_DURATION_MS = 15000
 MAX_PHRASE_DURATION_FRAMES = int(MAX_PHRASE_DURATION_MS / FRAME_DURATION_MS)
+
 MIN_SPEECH_FRAMES_TO_KEEP = 5  # discard chunks shorter than ~150ms (coughs, clicks)
 
 
@@ -56,6 +57,7 @@ class VoiceActivityDetector:
         self._current_chunk = bytearray()
         self._silence_run = 0
         self._has_had_speech = False
+        self._frame_count = 0  # total frames (speech + silence) in the current phrase
 
         # For padding
         # self._padding_buffer = deque(maxlen=PADDING_FRAMES)
@@ -93,6 +95,7 @@ class VoiceActivityDetector:
 
                 # OLD one without padding
                 self._current_chunk.extend(frame)
+                self._frame_count += 1
                 self._silence_run = 0
                 self._has_had_speech = True
 
@@ -100,15 +103,21 @@ class VoiceActivityDetector:
                 # Keep a little trailing silence in the chunk — sounds more
                 # natural than cutting off the instant speech stops.
                 self._current_chunk.extend(frame)
+                self._frame_count += 1
                 self._silence_run += 1
 
-                if self._silence_run >= SILENCE_FRAMES_TO_END_PHRASE:
+                # Only let silence end the phrase once it's already reached
+                # the minimum length — otherwise a pause early into a short
+                # utterance would finalize it immediately.
+                long_enough = self._frame_count >= MIN_PHRASE_DURATION_FRAMES
+                if long_enough and self._silence_run >= SILENCE_FRAMES_TO_END_PHRASE:
                     finalized = self._finalize_if_long_enough()
                     if finalized is not None:
                         # A frame already finalized this call — return it now
                         # rather than silently continuing to scan more frames.
                         self._leftover = data[offset:]
                         return finalized
+                    continue  # finalize returned None (too short) — keep scanning this call's frames
             # else: silence before any speech has started — just drop it, nothing to buffer yet
 
         self._leftover = data[offset:]

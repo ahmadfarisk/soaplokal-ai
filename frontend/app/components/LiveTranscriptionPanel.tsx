@@ -76,15 +76,15 @@ export default function LiveTranscriptionPanel({
         setStatus("Not recording");
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // const stream = await navigator.mediaDevices.getUserMedia({
-      //   audio: {
-      //     echoCancellation: false,
-      //     noiseSuppression: false,
-      //     autoGainControl: false,
-      //     channelCount: 1,
-      //   },
-      // });
+      // const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
       streamRef.current = stream;
 
       const audioContext = new AudioContext({ sampleRate: 48000 });

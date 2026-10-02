@@ -247,11 +247,15 @@ async def live_transcribe(websocket: WebSocket):
  
             chunk_count += 1
             try:
+                _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", finalized_chunk)
+
+                if not is_likely_real_speech(finalized_chunk):
+                    logger.info(f"Phrase {chunk_count} rejected as non-speech (ZCR/energy check).")
+                    continue
+
                 # Resampling
                 audio_array = resample_chunk(finalized_chunk)
                 logger.info(f"Phrase {chunk_count} audio resampled.")
-
-                _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", finalized_chunk)
 
                 # Transcribe in threadpool
                 text = await run_in_threadpool(
@@ -313,3 +317,37 @@ def _save_wav(path: Path, pcm_bytes: bytes) -> None:
         wf.setsampwidth(2)  # 16-bit
         wf.setframerate(SAMPLE_RATE)
         wf.writeframes(pcm_bytes)
+
+
+def is_likely_real_speech(pcm_bytes: bytes, sample_rate: int = 48000) -> bool:
+    audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+    if len(audio) == 0:
+        return False
+
+    # --- Zero-crossing rate ---
+    signs = np.sign(audio)
+    signs[signs == 0] = 1  # avoid double-counting a flat zero as a crossing
+    zero_crossings = np.sum(np.abs(np.diff(signs))) / 2
+    zcr = zero_crossings / len(audio)
+
+    # --- Energy spread across sub-windows ---
+    window_size = int(sample_rate * 0.02)  # 20ms windows
+    num_windows = len(audio) // window_size
+    if num_windows == 0:
+        return False
+
+    window_energies = [
+        np.sqrt(np.mean(audio[i * window_size:(i + 1) * window_size] ** 2))
+        for i in range(num_windows)
+    ]
+    max_energy = max(window_energies)
+    active_windows = sum(1 for e in window_energies if e > max_energy * 0.3)
+    spread_ratio = active_windows / num_windows
+
+    # Tune these two thresholds against your own click vs. speech test cases.
+    ZCR_MAX = 0.101 # clicks tend to run higher than this
+    SPREAD_MIN = 0.04 # clicks concentrate energy in very few windows
+
+    logging.info(f"zcr={zcr:.3f} spread={spread_ratio:.3f}")
+
+    return zcr < ZCR_MAX and spread_ratio > SPREAD_MIN
