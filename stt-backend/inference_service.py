@@ -1,4 +1,3 @@
-
 import logging
 import time
 
@@ -47,7 +46,7 @@ def load_model(model_id: str, local_path: str, device: str = DEFAULT_OV_DEVICE):
       tokenizer=processor.tokenizer,
       feature_extractor=processor.feature_extractor,
     )
-  except e: 
+  except Exception as e:
     raise InferenceError(f"Failed to load {model_id} pipeline: {e}")
 
 def unload_model(model_id: str) -> None:
@@ -66,8 +65,9 @@ def unload_all() -> None:
   
 
 # Get loaded model
-def get_loaded_models() -> str:
-  print(_loaded_pipelines)
+def get_loaded_models() -> dict:
+  """Returns {model_id: {"engine": "openvino"}} for everything currently loaded."""
+  return {model_id: {"engine": "openvino"} for model_id in _loaded_pipelines.keys()}
 
 
 # Transcribe an audio (RETURNS THE TEXT)
@@ -96,11 +96,13 @@ def transcribe(model_id: str, audio_path: str) -> str:
 
 
 # Transcribe array
-def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int = 16000) -> str:
+def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int = 16000) -> dict:
   pipe = _loaded_pipelines.get(model_id)
   if pipe is None:
     raise InferenceError(f"Model '{model_id}' is not loaded.")
-  
+
+  audio_seconds = len(audio_array) / sampling_rate if sampling_rate else None
+
   start_time = time.perf_counter()
 
   result = pipe({"array": audio_array, "sampling_rate": sampling_rate}, 
@@ -114,14 +116,16 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
                 )
   
   elapsed = time.perf_counter() - start_time
+  real_time_factor = elapsed / audio_seconds if audio_seconds else None
 
-  return result["text"]
-  # return {
-  #   "text": result["text"],
-  #   "metrics": {
-  #     "processing_seconds": round(elapsed, 3),
-  #   },
-  # }
+  return {
+    "text": result["text"],
+    "metrics": {
+      "processing_seconds": round(elapsed, 3),
+      "audio_seconds": round(audio_seconds, 2) if audio_seconds else None,
+      "real_time_factor": round(real_time_factor, 3) if real_time_factor else None,
+    },
+  }
 
 
 def resample_chunk(pcm_bytes: bytes, orig_sr: int = 48000, target_sr: int = 16000) -> np.ndarray:

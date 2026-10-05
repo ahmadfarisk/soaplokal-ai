@@ -2,6 +2,9 @@
 
 import { useRef, useState } from "react";
 
+import MetricsDisplay from "@/components/MetricsDisplay";
+import { SttMetrics, sttMetricItems } from "@/components/MetricsDisplay";
+
 interface LiveTranscriptionPanelProps {
   apiUrl: string;
   loadedModelId: string | null;
@@ -31,6 +34,7 @@ export default function LiveTranscriptionPanel({
   const [status, setStatus] = useState("Not recording");
 
   const recordingStartRef = useRef<number | null>(null);
+  const [metrics, setMetrics] = useState<SttMetrics | null>(null);
   const [lastMetrics, setLastMetrics] = useState<{ recordingSeconds: number; drainSeconds: number } | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
@@ -74,6 +78,7 @@ export default function LiveTranscriptionPanel({
               ? `${transcriptRef.current} ${msg.text}`
               : msg.text;
             onTranscriptChange(next);
+            setMetrics(msg.metrics ?? null);
           } else if (msg.type === "done") {
             // Backend finished draining its queue and flushing trailing
             // audio — safe for stopRecording()'s wait to resolve now.
@@ -212,6 +217,8 @@ export default function LiveTranscriptionPanel({
           {lastMetrics.drainSeconds.toFixed(1)}s to finish transcribing after Stop
         </p>
       )}
+
+      <MetricsDisplay items={metrics ? sttMetricItems(metrics) : null} />
     </section>
   );
 }

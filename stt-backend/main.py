@@ -266,9 +266,11 @@ async def live_transcribe(websocket: WebSocket):
             logger.info(f"Phrase {chunk_count} audio resampled.")
 
             # Transcribe in threadpool
-            text = await run_in_threadpool(
+            result = await run_in_threadpool(
                 inference_service.transcribe_array, model_id, audio_array
             )
+            text = result["text"]
+            metrics = result["metrics"]
             logger.info(f"Phrase {chunk_count} audio transcribed.")
 
             # Hallucination check
@@ -279,7 +281,7 @@ async def live_transcribe(websocket: WebSocket):
             logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
             
             # Send result
-            await websocket.send_json({"type": "phrase", "text": text})
+            await websocket.send_json({"type": "phrase", "text": text, "metrics": metrics})
 
         except WebSocketDisconnect:
             logger.info("Client disconnected before result could be sent.")

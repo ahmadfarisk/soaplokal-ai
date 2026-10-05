@@ -10,6 +10,8 @@ import GenerationParamsPanel, {
   GenerationParams,
 } from "@/components/GenerationParamsPanel";
 import LiveTranscriptionPanel from "@/components/LiveTranscriptionPanel";
+import MetricsDisplay from "@/components/MetricsDisplay";
+import { LlmMetrics, llmMetricItems } from "@/components/MetricsDisplay";
 
 const STT_API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
@@ -77,6 +79,7 @@ export default function SoapNotePage() {
 
   const [genParams, setGenParams] = useState<GenerationParams>(DEFAULT_GENERATION_PARAMS);
 
+  const [llmMetrics, setLlmMetrics] = useState<LlmMetrics | null>(null);
   const [llmTime, setLLMTime] = useState(0.0);
 
   function resetError() {
@@ -106,7 +109,10 @@ export default function SoapNotePage() {
       }
       const reply = data.choices?.[0]?.message?.content ?? "";
       setSoapNote(reply);
+
+      // Result Metrics
       setLLMTime(data.metrics.processing_time);
+      setLlmMetrics(data.metrics ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -207,10 +213,13 @@ export default function SoapNotePage() {
                 </p>
               )}
             </section>
+
           </div>
         </div>
 
         <SoapNoteResult rawText={soapNote} />
+
+        <MetricsDisplay items={llmMetrics ? llmMetricItems(llmMetrics) : null} />
       </div>
     </main>
   );
