@@ -37,8 +37,9 @@ def load_model(model_id: str, local_path: str, device: str = DEFAULT_OV_DEVICE):
   try:
     logger.info(f"Loading [{model_id}] pipeline.")
     # Load model
-    model = OVModelForSpeechSeq2Seq.from_pretrained(local_path, device=device)
+    model = OVModelForSpeechSeq2Seq.from_pretrained(local_path, device=device, ov_config={"PERFORMANCE_HINT": "LATENCY"})
     processor = AutoProcessor.from_pretrained(local_path)
+
     # Put loade model into the list of loaded models
     _loaded_pipelines[model_id] = pipeline(
       "automatic-speech-recognition",
@@ -46,6 +47,8 @@ def load_model(model_id: str, local_path: str, device: str = DEFAULT_OV_DEVICE):
       tokenizer=processor.tokenizer,
       feature_extractor=processor.feature_extractor,
     )
+
+    print(model.config.use_cache if hasattr(model.config, "use_cache") else "unknown")
   except Exception as e:
     raise InferenceError(f"Failed to load {model_id} pipeline: {e}")
 
@@ -106,12 +109,13 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
   start_time = time.perf_counter()
 
   result = pipe({"array": audio_array, "sampling_rate": sampling_rate}, 
-                return_timestamps=True,
+                return_timestamps=False,
                 generate_kwargs={
                   "repetition_penalty": 1.2,
                   "no_repeat_ngram_size": 3,
                   "language": "indonesian",
                   "task": "transcribe",
+                  "num_beams": 1,
                   },
                 )
   

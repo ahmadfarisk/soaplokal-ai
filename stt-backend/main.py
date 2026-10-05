@@ -9,26 +9,6 @@ uvicorn main:app --reload --port 8001
 """
 
 
-whisper_model_choices = [
-    {
-        'id': 'whisper-tiny-int8-ov',
-        'hf_model_id': 'OpenVINO/whisper-tiny-int8-ov'
-    },
-    {
-        'id': 'whisper-small-int8-ov',
-        'hf_model_id': 'OpenVINO/whisper-small-int8-ov'
-    },
-    {
-        'id': 'whisper-base-int8-ov',
-        'hf_model_id': 'OpenVINO/whisper-base-int8-ov'
-    },
-    {
-        'id': 'whisper-medium-int8-ov',
-        'hf_model_id': 'OpenVINO/whisper-medium-int8-ov'
-    },
-]
-
-
 import asyncio
 import json
 import logging
@@ -355,6 +335,7 @@ KNOWN_HALLUCINATIONS = {
     "selamat menikmati",
     "selamat menikmati selamat menikmati",
     "terima kasih telah menonton",
+    "sampai jumpa di video selanjutnya",
 }
 
 def is_hallucination(text: str) -> bool:
