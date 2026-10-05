@@ -10,6 +10,8 @@ interface LiveTranscriptionPanelProps {
   onError: (message: string) => void;
 }
 
+const TRANSCRIBE_TIMEOUT = 60000
+
 /**
  * Live mode alongside the file-upload TranscriptionPanel. Streams mic audio
  * to the backend over a WebSocket; the backend runs VAD + transcription and
@@ -155,7 +157,7 @@ export default function LiveTranscriptionPanel({
       // against the rare case "done" never arrives for some reason.
       await new Promise<void>((resolve) => {
         doneResolverRef.current = resolve;
-        setTimeout(resolve, 10000);
+        setTimeout(resolve, TRANSCRIBE_TIMEOUT);
       });
       doneResolverRef.current = null;
 
