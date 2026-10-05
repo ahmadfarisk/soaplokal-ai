@@ -53,7 +53,8 @@ import inference_service
 import models_registry
 from inference_service import InferenceError, resample_chunk
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+# logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Local AI Studio — STT Backend")
@@ -277,8 +278,6 @@ async def live_transcribe(websocket: WebSocket):
             if is_hallucination(text):
                 logger.info(f"Phrase {chunk_count} transcription failed (Hallucination).")
                 return
-
-            logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
             
             # Send result
             await websocket.send_json({"type": "phrase", "text": text, "metrics": metrics})
@@ -354,6 +353,8 @@ KNOWN_HALLUCINATIONS = {
     "terima kasih telah menonton",
     "terima kasih banyak untuk menonton",
     "selamat menikmati",
+    "selamat menikmati selamat menikmati",
+    "terima kasih telah menonton",
 }
 
 def is_hallucination(text: str) -> bool:

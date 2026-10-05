@@ -48,7 +48,7 @@ export default function MetricsDisplay({ items }: { items: MetricItem[] | null }
       {items.map((item) => (
         <span
           key={item.label}
-          className="rounded-md border border-gray-700 p-4 text-xs text-gray-400"
+          className="rounded-md border border-gray-700 py-1 px-2 text-xs text-gray-400"
         >
           {item.label}: <span className="text-gray-200">{item.value}</span>
         </span>

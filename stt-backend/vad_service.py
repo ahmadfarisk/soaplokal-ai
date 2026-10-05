@@ -24,7 +24,7 @@ FRAME_SIZE_BYTES = int(SAMPLE_RATE * (FRAME_DURATION_MS / 1000) * BYTES_PER_SAMP
 # --- Tuning knobs -----------------------------------------------------------
 # If phrases cut off too early mid-sentence, raise SILENCE_FRAMES_TO_END_PHRASE
 # first. 30 frames * 30ms = ~900ms; try 40 (~1.2s) if still too eager.
-SILENCE_FRAMES_TO_END_PHRASE = 20
+SILENCE_FRAMES_TO_END_PHRASE = 15
  
 # How many consecutive frames of silence are needed before a phrase is allowed
 # to end AT ALL, once it's already reached MIN_PHRASE_DURATION_MS long. Below
@@ -110,7 +110,8 @@ class VoiceActivityDetector:
                 # the minimum length — otherwise a pause early into a short
                 # utterance would finalize it immediately.
                 long_enough = self._frame_count >= MIN_PHRASE_DURATION_FRAMES
-                if long_enough and self._silence_run >= SILENCE_FRAMES_TO_END_PHRASE:
+                much_too_long = self._frame_count >= MAX_PHRASE_DURATION_FRAMES
+                if (long_enough and self._silence_run >= SILENCE_FRAMES_TO_END_PHRASE) or much_too_long:
                     finalized = self._finalize_if_long_enough()
                     if finalized is not None:
                         # A frame already finalized this call — return it now

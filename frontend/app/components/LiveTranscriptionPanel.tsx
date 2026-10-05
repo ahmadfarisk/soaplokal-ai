@@ -13,7 +13,8 @@ interface LiveTranscriptionPanelProps {
   onError: (message: string) => void;
 }
 
-const TRANSCRIBE_TIMEOUT = 60000
+const TRANSCRIBE_TIMEOUT = 600000 
+// 10 minutes ??
 
 /**
  * Live mode alongside the file-upload TranscriptionPanel. Streams mic audio
@@ -34,7 +35,7 @@ export default function LiveTranscriptionPanel({
   const [status, setStatus] = useState("Not recording");
 
   const recordingStartRef = useRef<number | null>(null);
-  const [metrics, setMetrics] = useState<SttMetrics | null>(null);
+  // const [metrics, setMetrics] = useState<SttMetrics | null>(null);
   const [lastMetrics, setLastMetrics] = useState<{ recordingSeconds: number; drainSeconds: number } | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
@@ -78,7 +79,7 @@ export default function LiveTranscriptionPanel({
               ? `${transcriptRef.current} ${msg.text}`
               : msg.text;
             onTranscriptChange(next);
-            setMetrics(msg.metrics ?? null);
+            // setMetrics(msg.metrics ?? null);
           } else if (msg.type === "done") {
             // Backend finished draining its queue and flushing trailing
             // audio — safe for stopRecording()'s wait to resolve now.
@@ -218,7 +219,7 @@ export default function LiveTranscriptionPanel({
         </p>
       )}
 
-      <MetricsDisplay items={metrics ? sttMetricItems(metrics) : null} />
+      {/* <MetricsDisplay items={metrics ? sttMetricItems(metrics) : null} /> */}
     </section>
   );
 }
