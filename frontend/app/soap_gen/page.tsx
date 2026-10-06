@@ -52,6 +52,11 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
     label: 'bweng\'s Whisper V3 Large (INT8) Turbo',
     extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-fp16-ov' },
   },
+  // {
+  //   model_id: 'distil-whisper-large-v3-int8-ov',
+  //   label: 'Distil Whisper V3 Large (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/distil-whisper-large-v3-int8-ov' },
+  // },
 ];
 
 // function buildSoapPrompt(transcript: string): string {
