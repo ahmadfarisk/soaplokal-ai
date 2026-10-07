@@ -253,6 +253,8 @@ async def live_transcribe(websocket: WebSocket):
             text = result["text"]
             metrics = result["metrics"]
             logger.info(f"Phrase {chunk_count} audio transcribed.")
+            logger.info(f"Processing time: {metrics["processing_seconds"]}")
+            logger.info(f"Real time factor: {metrics["real_time_factor"]}")
 
             # Hallucination check
             if is_hallucination(text):
@@ -336,6 +338,7 @@ KNOWN_HALLUCINATIONS = {
     "selamat menikmati selamat menikmati",
     "terima kasih telah menonton",
     "sampai jumpa di video selanjutnya",
+    "ini adalah percakapan antara seorang dokter dan pasiennya",
 }
 
 def is_hallucination(text: str) -> bool:
@@ -387,6 +390,6 @@ def is_likely_real_speech(pcm_bytes: bytes, sample_rate: int = 48000) -> bool:
     ZCR_MAX = 0.100 # clicks tend to run higher than this
     SPREAD_MIN = 0.02 # clicks concentrate energy in very few windows
 
-    logging.info(f"zcr={zcr:.3f} spread={spread_ratio:.3f}")
+    # logging.info(f"zcr={zcr:.3f} spread={spread_ratio:.3f}")
 
     return zcr < ZCR_MAX and spread_ratio > SPREAD_MIN

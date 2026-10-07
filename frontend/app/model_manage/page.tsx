@@ -4,45 +4,45 @@ import { useState } from "react";
 import DownloadPanel from "@/components/DownloadPanel";
 import ModelManagerList from "@/components/ModelManagerList";
 
-const STT_API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
+const STT_API_URL = process.env.NEXT_PUBLIC_FASTER_WHISPER_API_URL || "http://localhost:8002";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
 
 const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<string, string> }[] = [
-  {
-    model_id: 'whisper-tiny-int8-ov',
-    label: 'Whisper Tiny (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-tiny-int8-ov' },
-  },
-  {
-    model_id: 'whisper-base-int8-ov',
-    label: 'Whisper Base (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-base-int8-ov' },
-  },
-  {
-    model_id: 'whisper-small-int8-ov',
-    label: 'Whisper Small (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-small-int8-ov' },
-  },
-  {
-    model_id: 'whisper-medium-int8-ov',
-    label: 'Whisper Medium (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-medium-int8-ov' },
-  },
-  {
-    model_id: 'whisper-large-v3-int8-ov',
-    label: 'Whisper V3 Large (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
-  },
-  {
-    model_id: 'whisper-large-v3-turbo-int8-ov',
-    label: 'Whisper V3 Large (INT8) Turbo',
-    extra: { hf_model_id: 'OpenVINO/whisper-large-v3-turbo-int8-ov' },
-  },
-  {
-    model_id: 'bweng-whisper-large-v3-turbo-int8-ov',
-    label: 'bweng\'s Whisper V3 Large (INT8) Turbo',
-    extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-int8-ov' },
-  },
+  // {
+  //   model_id: 'whisper-tiny-int8-ov',
+  //   label: 'Whisper Tiny (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/whisper-tiny-int8-ov' },
+  // },
+  // {
+  //   model_id: 'whisper-base-int8-ov',
+  //   label: 'Whisper Base (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/whisper-base-int8-ov' },
+  // },
+  // {
+  //   model_id: 'whisper-small-int8-ov',
+  //   label: 'Whisper Small (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/whisper-small-int8-ov' },
+  // },
+  // {
+  //   model_id: 'whisper-medium-int8-ov',
+  //   label: 'Whisper Medium (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/whisper-medium-int8-ov' },
+  // },
+  // {
+  //   model_id: 'whisper-large-v3-int8-ov',
+  //   label: 'Whisper V3 Large (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
+  // },
+  // {
+  //   model_id: 'whisper-large-v3-turbo-int8-ov',
+  //   label: 'Whisper V3 Large (INT8) Turbo',
+  //   extra: { hf_model_id: 'OpenVINO/whisper-large-v3-turbo-int8-ov' },
+  // },
+  // {
+  //   model_id: 'bweng-whisper-large-v3-turbo-int8-ov',
+  //   label: 'bweng\'s Whisper V3 Large (INT8) Turbo',
+  //   extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-int8-ov' },
+  // },
 ];
 
 export default function ModelManagementPage() {
