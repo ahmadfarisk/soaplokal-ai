@@ -195,10 +195,17 @@ def _chat_llama_cpp(entry: dict, message: str, history: list[dict] | None, param
     
     elapsed = time.perf_counter() - start_time
 
-
     data = response.json()  # already in the {"choices": [{"message": {"content": ...}}]} shape
-    data["metrics"] = { "processing_time": round(elapsed, 3)}
+    usage = data.get("usage", {})
+    data["metrics"] = _llm_metrics(elapsed, usage.get("prompt_tokens"), usage.get("completion_tokens"))
 
+    # llama-server optionally reports its own prompt-processing vs generation
+    # split — free extra detail OpenVINO's response has no equivalent for.
+    timings = data.get("timings")
+    if timings:
+        data["metrics"]["prompt_seconds"] = round(timings.get("prompt_ms", 0) / 1000, 3)
+        data["metrics"]["generation_seconds"] = round(timings.get("predicted_ms", 0) / 1000, 3)
+        data["metrics"]["generation_tokens_per_second"] = round(timings.get("predicted_per_second", 0), 2)
 
     return data
 
@@ -261,19 +268,23 @@ def _chat_openvino(entry: dict, message: str, history: list[dict] | None, params
         
         start_time = time.perf_counter()
         outputs = model.generate(**inputs, **generate_kwargs)
-        text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
         elapsed = time.perf_counter() - start_time
+
+        prompt_tokens = int(inputs.input_ids.shape[1])
+        completion_tokens = int(outputs.shape[1] - prompt_tokens)
+        text = tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
 
     except Exception as e:
         raise InferenceError(f"OpenVINO generation failed: {e}")
 
     # Normalized to match llama_cpp's response shape, so main.py and the
-    # frontend never need to know which engine actually answered.
+    # frontend never need to know which engine actually answered. No
+    # prompt/generation split here (unlike llama_cpp's optional "timings") —
+    # HF's generate() doesn't report that breakdown without switching to a
+    # streaming generation call, which this doesn't currently do.
     return {
         "choices": [{"message": {"content": text}}],
-        "metrics": {
-            "processing_time": round(elapsed, 3),
-        }
+        "metrics": _llm_metrics(elapsed, prompt_tokens, completion_tokens),
     }
 
 
@@ -322,6 +333,22 @@ def chat(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+def _llm_metrics(elapsed: float, prompt_tokens: int | None, completion_tokens: int | None) -> dict:
+    """
+    Same definition for both engines, so the frontend never needs to branch
+    on which one answered. tokens_per_second is completion tokens over the
+    TOTAL elapsed time (including prompt processing) — for a long transcript
+    that's the number you actually experience waiting, not just raw decode speed.
+    """
+    tps = completion_tokens / elapsed if completion_tokens and elapsed > 0 else None
+    return {
+        "total_seconds": round(elapsed, 3),
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "tokens_per_second": round(tps, 2) if tps else None,
+    }
+
 
 def _find_free_port() -> int:
     """Returns the next port not currently assigned to a loaded llama_cpp model."""

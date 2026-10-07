@@ -9,6 +9,9 @@ import GenerationParamsPanel, {
   DEFAULT_GENERATION_PARAMS,
   GenerationParams,
 } from "@/components/GenerationParamsPanel";
+import LiveTranscriptionPanel from "@/components/LiveTranscriptionPanel";
+import MetricsDisplay from "@/components/MetricsDisplay";
+import { LlmMetrics, llmMetricItems } from "@/components/MetricsDisplay";
 
 const STT_API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
@@ -39,6 +42,21 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
     label: 'Whisper V3 Large (INT8)',
     extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
   },
+  {
+    model_id: 'whisper-large-v3-turbo-int8-ov',
+    label: 'Whisper V3 Large (INT8) Turbo',
+    extra: { hf_model_id: 'OpenVINO/whisper-large-v3-turbo-int8-ov' },
+  },
+  {
+    model_id: 'bweng-whisper-large-v3-turbo-int8-ov',
+    label: 'bweng\'s Whisper V3 Large (INT8) Turbo',
+    extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-fp16-ov' },
+  },
+  // {
+  //   model_id: 'distil-whisper-large-v3-int8-ov',
+  //   label: 'Distil Whisper V3 Large (INT8)',
+  //   extra: { hf_model_id: 'OpenVINO/distil-whisper-large-v3-int8-ov' },
+  // },
 ];
 
 // function buildSoapPrompt(transcript: string): string {
@@ -51,7 +69,7 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
 // }
 
 function buildSoapPrompt(transcript: string): string {
-  return `Anda adalah asisten dokumentasi. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
+  return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
 
 Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan.
 
@@ -71,8 +89,12 @@ export default function SoapNotePage() {
 
   const [genParams, setGenParams] = useState<GenerationParams>(DEFAULT_GENERATION_PARAMS);
 
+  const [llmMetrics, setLlmMetrics] = useState<LlmMetrics | null>(null);
   const [llmTime, setLLMTime] = useState(0.0);
 
+  function resetError() {
+    setError(null)
+  }
 
   async function handleGenerate() {
     if (!transcript.trim() || !llmModelId) return;
@@ -97,7 +119,10 @@ export default function SoapNotePage() {
       }
       const reply = data.choices?.[0]?.message?.content ?? "";
       setSoapNote(reply);
+
+      // Result Metrics
       setLLMTime(data.metrics.processing_time);
+      setLlmMetrics(data.metrics ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -113,8 +138,14 @@ export default function SoapNotePage() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 rounded-md bg-red-50 text-red-800 text-sm px-4 py-3">
+          <div className="mb-6 rounded-md bg-red-50 text-red-800 text-sm px-4 py-3 flex justify-between">
             {error}
+            <button
+              className="cursor-pointer"
+              onClick={resetError}
+            >
+              X
+            </button>
           </div>
         )}
 
@@ -138,6 +169,14 @@ export default function SoapNotePage() {
             />
 
             <TranscriptionPanel
+              apiUrl={STT_API_URL}
+              loadedModelId={sttModelId}
+              transcript={transcript}
+              onTranscriptChange={setTranscript}
+              onError={setError}
+            />
+
+            <LiveTranscriptionPanel
               apiUrl={STT_API_URL}
               loadedModelId={sttModelId}
               transcript={transcript}
@@ -184,10 +223,13 @@ export default function SoapNotePage() {
                 </p>
               )}
             </section>
+
           </div>
         </div>
 
         <SoapNoteResult rawText={soapNote} />
+
+        <MetricsDisplay items={llmMetrics ? llmMetricItems(llmMetrics) : null} />
       </div>
     </main>
   );

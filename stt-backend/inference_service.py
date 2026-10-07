@@ -1,10 +1,13 @@
-
 import logging
+import time
 
+# For OpenVINO
 from optimum.intel import OVModelForSpeechSeq2Seq
 from transformers import AutoProcessor, pipeline
 
-import time
+import numpy as np
+import librosa
+import noisereduce
 
 import models_registry
 
@@ -34,8 +37,9 @@ def load_model(model_id: str, local_path: str, device: str = DEFAULT_OV_DEVICE):
   try:
     logger.info(f"Loading [{model_id}] pipeline.")
     # Load model
-    model = OVModelForSpeechSeq2Seq.from_pretrained(local_path, device=device)
+    model = OVModelForSpeechSeq2Seq.from_pretrained(local_path, device=device, ov_config={"PERFORMANCE_HINT": "LATENCY"})
     processor = AutoProcessor.from_pretrained(local_path)
+
     # Put loade model into the list of loaded models
     _loaded_pipelines[model_id] = pipeline(
       "automatic-speech-recognition",
@@ -43,7 +47,9 @@ def load_model(model_id: str, local_path: str, device: str = DEFAULT_OV_DEVICE):
       tokenizer=processor.tokenizer,
       feature_extractor=processor.feature_extractor,
     )
-  except e: 
+
+    print(model.config.use_cache if hasattr(model.config, "use_cache") else "unknown")
+  except Exception as e:
     raise InferenceError(f"Failed to load {model_id} pipeline: {e}")
 
 def unload_model(model_id: str) -> None:
@@ -62,8 +68,9 @@ def unload_all() -> None:
   
 
 # Get loaded model
-def get_loaded_models() -> str:
-  print(_loaded_pipelines)
+def get_loaded_models() -> dict:
+  """Returns {model_id: {"engine": "openvino"}} for everything currently loaded."""
+  return {model_id: {"engine": "openvino"} for model_id in _loaded_pipelines.keys()}
 
 
 # Transcribe an audio (RETURNS THE TEXT)
@@ -91,6 +98,47 @@ def transcribe(model_id: str, audio_path: str) -> str:
   }
 
 
+# Transcribe array
+def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int = 16000) -> dict:
+  pipe = _loaded_pipelines.get(model_id)
+  if pipe is None:
+    raise InferenceError(f"Model '{model_id}' is not loaded.")
+
+  audio_seconds = len(audio_array) / sampling_rate if sampling_rate else None
+
+  start_time = time.perf_counter()
+
+  result = pipe({"array": audio_array, "sampling_rate": sampling_rate}, 
+                return_timestamps=False,
+                generate_kwargs={
+                  "repetition_penalty": 1.2,
+                  "no_repeat_ngram_size": 3,
+                  "language": "indonesian",
+                  "task": "transcribe",
+                  "num_beams": 1,
+                  },
+                )
+  
+  elapsed = time.perf_counter() - start_time
+  real_time_factor = elapsed / audio_seconds if audio_seconds else None
+
+  return {
+    "text": result["text"],
+    "metrics": {
+      "processing_seconds": round(elapsed, 3),
+      "audio_seconds": round(audio_seconds, 2) if audio_seconds else None,
+      "real_time_factor": round(real_time_factor, 3) if real_time_factor else None,
+    },
+  }
+
+
+def resample_chunk(pcm_bytes: bytes, orig_sr: int = 48000, target_sr: int = 16000) -> np.ndarray:
+    audio = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+    return librosa.resample(audio, orig_sr=orig_sr, target_sr=target_sr)
+
+def _reduce_noise(arr: np.ndarray, target_sr: int = 16000):
+  _reduced_array = noisereduce.reduce_noise(y=arr, sr=target_sr)
+  return _reduced_array
 
 
 if __name__ == "__main__":
