@@ -41,6 +41,9 @@ DEFAULT_REPETITION_PENALTY = 1.15
 DEFAULT_TOP_P = 0.9
 DEFAULT_TOP_K = 40
 
+
+THREAD = 6
+
 # --- In-memory state ---------------------------------------------------------
 # One dict for both engines. Shape depends on entry["engine"]:
 #   llama_cpp -> {"engine": "llama_cpp", "process": Popen, "port": int}
@@ -140,7 +143,7 @@ def _load_llama_cpp(model_id: str, local_path: str) -> dict:
         # Equivalent to running on the command line:
         # ./build/bin/Release/llama-server -m <local_path> --port <port>
         process = subprocess.Popen(
-            [str(LLAMA_SERVER_PATH), "-m", local_path, "--port", str(port)],
+            [str(LLAMA_SERVER_PATH), "-m", local_path, "-t",str(THREAD),"--port", str(port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
@@ -310,6 +313,13 @@ def chat(
     Raises InferenceError if the model isn't currently loaded or the request fails.
     Always returns {"choices": [{"message": {"content": "..."}}]} regardless of engine.
     """
+
+    logger.info(f"Param: temperature = {temperature}")
+    logger.info(f"Param: top_p = {top_p}")
+    logger.info(f"Param: top_k = {top_k}")
+    logger.info(f"Param: repetition_penalty = {repetition_penalty}")
+    logger.info(f"Param: max_tokens = {max_tokens}")
+
     entry = _loaded_models.get(model_id)
     if entry is None:
         raise InferenceError(f"Model '{model_id}' is not loaded. Call load_model() first.")

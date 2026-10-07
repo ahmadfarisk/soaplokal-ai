@@ -33,7 +33,7 @@ export function parseSoapNote(raw: string): SoapSections {
   const sections: SoapSections = { subjective: "", objective: "", assessment: "", plan: "" };
 
   const cleaned = stripThinking(raw);
-  const pattern = /(Subjective|Objective|Assessment|Plan)\s*:?\s*\n?/gi;
+  const pattern = /\*{0,2}(Subjective|Objective|Assessment|Plan)\*{0,2}\s*:?\s*\*{0,2}\s*\n?/gi
   const parts = cleaned.split(pattern);
 
   // raw.split with a capturing group interleaves: [textBefore, header, textAfter, header, textAfter, ...]

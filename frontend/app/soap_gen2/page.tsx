@@ -50,7 +50,7 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
 // }
 
 function buildSoapPrompt(transcript: string): string {
-  return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
+  return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP dalam Bahasa Indonesia.
 
 Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan.
 
@@ -79,6 +79,8 @@ export default function SoapNotePage() {
 
   async function handleGenerate() {
     if (!transcript.trim() || !llmModelId) return;
+    console.log("Generating with", genParams)
+
     setGenerating(true);
     setError(null);
     setSoapNote("");
@@ -99,6 +101,7 @@ export default function SoapNotePage() {
         return;
       }
       const reply = data.choices?.[0]?.message?.content ?? "";
+      console.log(data)
       setSoapNote(reply);
 
       // Result Metrics

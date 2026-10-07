@@ -236,7 +236,7 @@ async def live_transcribe(websocket: WebSocket):
         pipeline for one finalized chunk — shared by both the normal VAD
         path and the flush-on-stop path, so logging and behavior match."""
         try:
-            _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", chunk_bytes)
+            # _save_wav(f"./vad_test_chunks/chunk_{chunk_count}.wav", chunk_bytes)
 
             if not is_likely_real_speech(chunk_bytes):
                 logger.info(f"Phrase {chunk_count} rejected as non-speech (ZCR/energy check).")

@@ -63,12 +63,15 @@ class DownloadRequest(BaseModel):
     filename: Optional[str] = None
     hf_model_id: Optional[str] = None
 
-
 class ChatRequest(BaseModel):
     model_id: str
     message: str
     history: Optional[list[dict]] = None
-
+    temperature: float
+    top_p: float
+    top_k: int
+    repetition_penalty: float
+    max_tokens: int
 
 # ---------------------------------------------------------------------------
 # Model registry / download endpoints
@@ -180,7 +183,13 @@ def list_loaded_models():
 @app.post("/chat")
 def chat(req: ChatRequest):
     try:
-        result = inference_service.chat(req.model_id, req.message, req.history)
+        result = inference_service.chat(req.model_id, req.message, req.history,
+                                        temperature = req.temperature,
+                                        top_p = req.top_p,
+                                        top_k = req.top_k,
+                                        repetition_penalty = req.repetition_penalty,
+                                        max_tokens = req.max_tokens,
+                                        )
     except InferenceError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return result
