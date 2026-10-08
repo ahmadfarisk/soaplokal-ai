@@ -23,6 +23,11 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
     extra: { hf_model_id: 'Systran/faster-whisper-small' },
   },
   {
+    model_id: 'faster-whisper-medium',
+    label: 'Faster Whisper Medium',
+    extra: { hf_model_id: 'Systran/faster-whisper-medium' },
+  },
+  {
     model_id: 'faster-whisper-medium-id',
     label: 'jerichosiahaya\'s Faster Whisper Medium ID',
     extra: { hf_model_id: 'jerichosiahaya/faster-whisper-medium-id' },
