@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 LLAMA_SERVER_PATH = Path(__file__).parent.parent / "llama.cpp" / "build" / "bin" / "Release" / "llama-server.exe"
 
 PORT_RANGE_START = 8100
-HEALTH_CHECK_TIMEOUT_SECONDS = 60
+HEALTH_CHECK_TIMEOUT_SECONDS = 120
 HEALTH_CHECK_INTERVAL_SECONDS = 1
 
 DEFAULT_OV_DEVICE = "CPU"

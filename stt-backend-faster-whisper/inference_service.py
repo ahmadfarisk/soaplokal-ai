@@ -17,8 +17,8 @@ DEFAULT_DEVICE = "cpu"          # "cpu" or "cuda"
 DEFAULT_COMPUTE_TYPE = "int8"   # quantization — "int8" for CPU, "float16" is typical for "cuda"
 
 BEAM_SIZE = 1
-INITIAL_PROMPT = "Ini adalah percakapan antara seorang dokter dan pasiennya."
-LIVE_INITIAL_PROMPT = "Ini adalah cuplikan percakapan antara seorang dokter dan pasiennya."
+INITIAL_PROMPT = "Transkripsi konsultasi medis antara dokter dan pasien. Percakapan ini membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
+LIVE_INITIAL_PROMPT = "Transkripsi cuplikan konsultasi medis antara dokter dan pasien. Cuplikan ini berasal dari percakapan yang membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
 
 logger = logging.getLogger(__name__)
 

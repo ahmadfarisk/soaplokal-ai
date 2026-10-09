@@ -54,12 +54,68 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
 // ${transcript}`;
 // }
 
+// function buildSoapPrompt(transcript: string): string {
+//   return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP dalam Bahasa Indonesia. 
+
+// Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan. Jangan menambahkan informasi yang tidak ada pada transkrip untuk bagian Objective.
+
+// Transkrip:
+// ${transcript}`;
+// }
 function buildSoapPrompt(transcript: string): string {
-  return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP dalam Bahasa Indonesia.
+  return `Anda adalah seorang asisten dokumentasi medis profesional yang sangat objektif, teliti, dan berbasis fakta mutlak (strict evidence-based). Tugas Anda adalah mengubah transkrip percakapan antara dokter dan pasien di bawah ini menjadi catatan SOAP (Subjective, Objective, Assessment, Plan) dalam Bahasa Indonesia.
 
-Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan.
+Patuhi aturan ketat berikut tanpa pengecualian:
 
-Transkrip:
+1. KONTROL FAKTA & LARANGAN HALUSINASI NUMERIK:
+   - HANYA tuliskan informasi yang secara eksplisit ada di dalam transkrip. 
+   - Dilarang keras mengarang, menebak, atau menambahkan prosedur medis, pemeriksaan penunjang (seperti tes darah, rontgen, biopsi), maupun jenis obat yang TIDAK DISEBUTKAN oleh dokter atau pasien di dalam transkrip.
+   - ATURAN KHUSUS BAGIAN OBJECTIVE (Tanda Vital & Pemeriksaan Fisik): Jika dokter atau pasien TIDAK MENYEBUTKAN nilai tanda vital tertentu (seperti tekanan darah, suhu tubuh, atau denyut nadi) di dalam transkrip, **DILARANG KERAS MENGARANG ANGKA** (contoh: jangan menulis 120/80 mmHg atau 36.5°C jika tidak disebut). Anda **WAJIB** menuliskan secara jujur: "Informasi tidak disebutkan dalam transkrip" atau "Data tanda vital tidak tersedia".
+   - CONTOH PENANGANAN DATA KOSONG:
+    * Suhu tubuh: Informasi tidak disebutkan.*
+    * Tekanan darah: Informasi tidak disebutkan.*
+   - Waspadai penyangkalan pasien: Jika pasien menyatakan tidak memiliki riwayat alergi atau tidak pernah mengalami sesuatu, catat sebagai tidak ada. Jangan memutarbalikkan pernyataan pasien.
+
+2. PROTEKSI KELOMPOK PENGANDAIAN & KEMUNGKINAN DOKTER (Conditional Statement Guard):
+   - Waspadai kalimat pengandaian, antisipasi, atau kemungkinan yang diucapkan oleh dokter (contoh: "kalau ada keluhan lain seperti nyeri...", "jika nanti muncul demam..."). 
+   - Kalimat-kalimat bersyarat dari dokter **BUKAN** berarti pasien sedang mengalami gejala tersebut. Jangan pernah mencatat angan-angan atau skenario hipotesis dokter ke dalam bagian Subjective pasien.
+   - CONTOH PENANGANAN KALIMAT PENGANDAIAN:
+    * Keluhan pasien: Hanya batuk (tidak ada keluhan nyeri yang disebutkan dialami pasien).*
+
+3. KOREKSI KONTEKSTUAL ASR TYPO:
+   - Terjemahkan kesalahan ketik otomatis (typo dari speech-to-text) secara masuk akal, dan frasa keliru mengenai lokasi pemeriksaan dipahami secara logis sesuai konteks percakapan medis, bukan ditelan secara harfiah.. 
+   CONTOH MENANGANI KATA-KATA KESALAHAN TRANSKRIP YANG TIDAK MASUK AKAL: 
+    * "meriam" dipahami sebagai "meriang". *
+    * "getel" dipahami sebagai "gatal". *
+    * "gatal-gatil" dipahami sebagai "gatal-gatal". *
+    * "bentol-bentel" dipahami sebagai "bentol-bentol". *
+    * "demam pudara hidupu" dipahami sebagau "demam berdarah". *
+
+4. KETENTUAN SUDUT PANDANG (Clinical Third-Person Perspective):
+   - Catatan SOAP WAJIB ditulis dari sudut pandang objektif pihak ketiga (sudut pandang tenaga medis/perekam medis profesional). 
+   - DILARANG KERAS menggunakan sudut pandang orang pertama ("Saya", "Aku", "Dokter", atau "Pasien" yang berbicara langsung seperti narasi dialog). 
+   - Gunakan format pelaporan klinis (contoh: "Pasien mengeluhkan...", "Riwayat pengobatan mandiri...", "Dokter menginstruksikan...").
+
+5. ATURAN KETAT BAGIAN PLAN (No Generic Plan Hallucination):
+   - Bagian Plan HANYA boleh berisi tindakan, obat, atau edukasi yang **secara eksplisit diucapkan kata per kata** oleh dokter di akhir transkrip.
+   - Dilarang keras berasumsi atau menambahkan kalimat generik standar medis yang *tidak diucapkan* oleh dokter di dalam transkrip (seperti menuliskan "akan memberikan resep jika diperlukan" atau "mengikuti aturan perawatan rumah" jika dokter tidak mengatakannya). Jika dokter di transkrip hanya meminta pemeriksaan lanjutan dan melarang menggaruk, maka Plan HANYA berisi hal tersebut.
+
+6. PEMISAHAN BAGIAN YANG KETAT:
+   - **Subjective:** HANYA berisi keluhan utama, durasi, karakteristik gejala, riwayat pengobatan mandiri, riwayat alergi, dan riwayat kontak yang *dikatakan oleh pasien*. Dilarang memasukkan hasil pengamatan fisik di sini.
+   - **Objective:** HANYA berisi temuan fisik, deskripsi lesi/ruam/luka yang tampak atau didiskusikan saat pemeriksaan, serta tanda vital (atau nyatakan tidak ada jika transkrip tidak menyebutkannya). *Dilarang keras* memasukkan kembali keluhan subjektif ke dalam bagian ini.
+   - **Assessment:** Berisi kesimpulan klinis sementara atau pernyataan dokter bahwa diagnosis belum pasti dan memerlukan pemeriksaan lebih lanjut.
+   - **Plan:** HANYA berisi rencana tindakan atau edukasi yang *benar-benar diucapkan secara nyata* oleh dokter dalam transkrip. Jika dokter tidak menyebutkan resep obat atau tindakan spesifik, tuliskan bahwa tindakan tersebut belum diinstruksikan dalam transkrip.
+
+
+Format Output:
+Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut tanpa tambahan kata pengantar atau komentar di luar format:
+
+Subjective:
+Objective:
+Assessment:
+Plan:
+
+Berikut adalah transkrip percakapan yang harus Anda ubah:
 ${transcript}`;
 }
 

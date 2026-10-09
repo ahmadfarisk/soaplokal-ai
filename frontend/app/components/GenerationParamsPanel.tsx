@@ -9,8 +9,8 @@ export interface GenerationParams {
 }
 
 export const DEFAULT_GENERATION_PARAMS: GenerationParams = {
-  temperature: 0.7,
-  top_p: 0.8,
+  temperature: 0.4,
+  top_p: 0.3,
   top_k: 40,
   repetition_penalty: 1.1,
   max_tokens: 1024,
