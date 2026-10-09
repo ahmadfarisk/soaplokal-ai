@@ -89,7 +89,9 @@ Patuhi aturan ketat berikut tanpa pengecualian:
     * "getel" dipahami sebagai "gatal". *
     * "gatal-gatil" dipahami sebagai "gatal-gatal". *
     * "bentol-bentel" dipahami sebagai "bentol-bentol". *
-    * "demam pudara hidupu" dipahami sebagau "demam berdarah". *
+    * "demam pudara hidupu" dipahami sebagai "demam berdarah". *
+    * "demang" dipahami sebagai "demam". *
+    * "begal" dipahami sebagai "pegal". *
 
 4. KETENTUAN SUDUT PANDANG (Clinical Third-Person Perspective):
    - Catatan SOAP WAJIB ditulis dari sudut pandang objektif pihak ketiga (sudut pandang tenaga medis/perekam medis profesional). 
