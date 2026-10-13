@@ -43,6 +43,8 @@ DEFAULT_TOP_K = 40
 
 
 THREAD = 6
+LOGICAL_PROCESSOR = 12
+CONTEXT_SIZE = 4096
 
 # --- In-memory state ---------------------------------------------------------
 # One dict for both engines. Shape depends on entry["engine"]:
@@ -139,11 +141,12 @@ def _load_llama_cpp(model_id: str, local_path: str) -> dict:
     port = _find_free_port()
     logger.info(f"[{model_id}] Spawning llama-server on port {port} for {local_path}")
 
+
     try:
         # Equivalent to running on the command line:
-        # ./build/bin/Release/llama-server -m <local_path> --port <port>
+        # ./build/bin/Release/llama-server -m <local_path> --port <port> 
         process = subprocess.Popen(
-            [str(LLAMA_SERVER_PATH), "-m", local_path, "-t",str(THREAD),"--port", str(port)],
+            [str(LLAMA_SERVER_PATH), "-m", local_path, "-t", str(THREAD), "-tb", str(LOGICAL_PROCESSOR), "-c", str(CONTEXT_SIZE), "--port", str(port)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )

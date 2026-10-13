@@ -18,6 +18,7 @@ from pathlib import Path
 import wave
 import traceback
 import numpy as np
+import time
 
 from starlette.concurrency import run_in_threadpool
 
@@ -191,9 +192,15 @@ async def transcribe(model_id: str, file: UploadFile = File(...)):
 CHUNKS_DIR = Path(__file__).parent / "vad_test_chunks"
 CHUNKS_DIR.mkdir(exist_ok=True)
 
+_RTF_list = []
+_processing_seconds_list = []
+
 @app.websocket("/ws/live-transcribe")
 async def live_transcribe(websocket: WebSocket):
     await websocket.accept()
+
+    _RTF_list = []
+    _processing_seconds_list = []
  
     model_id = websocket.query_params.get("model_id")
     if not model_id:
@@ -255,6 +262,9 @@ async def live_transcribe(websocket: WebSocket):
             logger.info(f"Phrase {chunk_count} audio transcribed.")
             logger.info(f"Processing time: {metrics["processing_seconds"]}")
             logger.info(f"Real time factor: {metrics["real_time_factor"]}")
+
+            _RTF_list.append(metrics["real_time_factor"])
+            _processing_seconds_list.append(metrics["processing_seconds"])
 
             # Hallucination check
             if is_hallucination(text):
@@ -318,12 +328,18 @@ async def live_transcribe(websocket: WebSocket):
  
     reader_task = asyncio.create_task(reader())
     processor_task = asyncio.create_task(processor())
- 
+    
+    session_start_time = 0.0
+
     try:
+        session_start_time = time.perf_counter()
         await processor_task  # the session is "done" once the processor stops
     finally:
         reader_task.cancel()
         logger.info("Live transcription session ended.")
+        elapsed_time = time.perf_counter() - session_start_time
+        print(f"Average RTF: {np.mean(_RTF_list)}")
+        print(f"Total processing seconds over session length: {np.sum(_processing_seconds_list)/elapsed_time}")
 
 
 
@@ -360,6 +376,8 @@ def _save_wav(path: Path, pcm_bytes: bytes) -> None:
         wf.setsampwidth(2)  # 16-bit
         wf.setframerate(SAMPLE_RATE)
         wf.writeframes(pcm_bytes)
+
+
 
 
 def is_likely_real_speech(pcm_bytes: bytes, sample_rate: int = 48000) -> bool:

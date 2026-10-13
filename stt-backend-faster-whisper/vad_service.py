@@ -24,19 +24,19 @@ FRAME_SIZE_BYTES = int(SAMPLE_RATE * (FRAME_DURATION_MS / 1000) * BYTES_PER_SAMP
 # --- Tuning knobs -----------------------------------------------------------
 # If phrases cut off too early mid-sentence, raise SILENCE_FRAMES_TO_END_PHRASE
 # first. 30 frames * 30ms = ~900ms; try 40 (~1.2s) if still too eager.
-SILENCE_FRAMES_TO_END_PHRASE = 30
+SILENCE_FRAMES_TO_END_PHRASE = 20
  
 # How many consecutive frames of silence are needed before a phrase is allowed
 # to end AT ALL, once it's already reached MIN_PHRASE_DURATION_MS long. Below
 # that minimum duration, silence is ignored entirely and the phrase keeps
 # accumulating — this stops a short utterance from being finalized the
 # instant it starts, purely because the very next frame happened to be quiet.
-MIN_PHRASE_DURATION_MS = 4000
+MIN_PHRASE_DURATION_MS = 5000
 MIN_PHRASE_DURATION_FRAMES = int(MIN_PHRASE_DURATION_MS / FRAME_DURATION_MS)
  
 # Safety valve: if a phrase somehow keeps growing forever (e.g. continuous
 # speech with no real pause), force a cut so it doesn't grow unbounded.
-MAX_PHRASE_DURATION_MS = 30000
+MAX_PHRASE_DURATION_MS = 25000
 MAX_PHRASE_DURATION_FRAMES = int(MAX_PHRASE_DURATION_MS / FRAME_DURATION_MS)
 
 MIN_SPEECH_FRAMES_TO_KEEP = 5  # discard chunks shorter than ~150ms (coughs, clicks)

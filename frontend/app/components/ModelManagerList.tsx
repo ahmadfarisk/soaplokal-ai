@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 interface ModelInfo {
   id: string;
+  hf_model_id: string;
+  repo_id: string;
   engine?: string;
   status: string;
   local_path: string | null;
@@ -102,7 +104,7 @@ export default function ModelManagerList({ title, apiUrl, onError, refreshSignal
               className="flex items-center justify-between gap-3 rounded-md border border-gray-700 px-3 py-2"
             >
               <div className="min-w-0">
-                <p className="text-sm text-gray-200 truncate">{m.id}</p>
+                <p className="text-sm text-gray-200 truncate">{ m.hf_model_id == null ? m.repo_id : m.hf_model_id }</p>
                 <p className="text-xs text-gray-500 truncate">
                   {m.engine ? `${m.engine} · ` : ""}
                   {m.status}

@@ -55,7 +55,7 @@ export default function ModelManagementPage() {
   const [sttRefreshSignal, setSttRefreshSignal] = useState(0);
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-10 font-sans">
+    <main className="max-w-4xl mx-auto px-4 py-10 font-sans">
       <h1 className="text-2xl font-semibold mb-6">Model Management</h1>
 
       {error && (

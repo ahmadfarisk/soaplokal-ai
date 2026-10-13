@@ -18,7 +18,8 @@ DEFAULT_COMPUTE_TYPE = "int8"   # quantization — "int8" for CPU, "float16" is 
 
 BEAM_SIZE = 1
 INITIAL_PROMPT = "Transkripsi konsultasi medis antara dokter dan pasien. Percakapan ini membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
-LIVE_INITIAL_PROMPT = "Transkripsi cuplikan konsultasi medis antara dokter dan pasien. Cuplikan ini berasal dari percakapan yang membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
+# LIVE_INITIAL_PROMPT = "Transkripsi cuplikan konsultasi medis antara dokter dan pasien. Cuplikan ini berasal dari percakapan yang membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
+LIVE_INITIAL_PROMPT = "Istilah medis dan gejala klinis: meriang, demam berdarah, DBD, demam, pusing, mual, batuk, sesak napas, nyeri dada, lemas, ruam, trombosit, tensi, tekanan darah, suhu tubuh, paracetamol, amoxicillin, ibuprofen, resep, diagnosis, anamnesis, pemeriksaan fisik, gatal."
 
 logger = logging.getLogger(__name__)
 
@@ -129,14 +130,15 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
   text, info, elapsed = _run_transcribe(
     model_id,
     audio_array,
-    temperature=0.2,
-    repetition_penalty=1.2,
+    temperature=0,
+    repetition_penalty=1.1,
     no_repeat_ngram_size=3,
     language="id",  # faster-whisper expects an ISO-639-1 code, not "indonesian"
     task="transcribe",
     condition_on_previous_text=False,
     initial_prompt=LIVE_INITIAL_PROMPT,
     beam_size=BEAM_SIZE,
+    without_timestamps=True,
   )
 
   real_time_factor = elapsed / info.duration if info.duration else None
