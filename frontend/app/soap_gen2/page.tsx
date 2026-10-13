@@ -77,7 +77,7 @@ Patuhi aturan ketat berikut tanpa pengecualian:
    - Waspadai penyangkalan pasien: Jika pasien menyatakan tidak memiliki riwayat alergi atau tidak pernah mengalami sesuatu, catat sebagai tidak ada. Jangan memutarbalikkan pernyataan pasien.
 
 2. ATURAN KETAT DESKRIPSI LESI / RUAM / FISIK (Visual Fact-Locking):
-   - Bagian Objective HANYA boleh mencatat bentuk, lokasi, atau kondisi fisik (lesi/ruam/luka) yang **secara lisan dideskripsikan langsung** oleh pasien atau dokter di dalam transkrip (misalnya: jumlah, lokasi di tubuh, atau kondisi pecah karena digaruk).
+   - Bagian Objective HANYA boleh mencatat bentuk, lokasi, atau kondisi fisik yang secara lisan dideskripsikan langsung oleh pasien atau dokter di dalam transkrip (misalnya: jumlah, lokasi di tubuh, atau kondisi pecah karena digaruk).
    - Dilarang keras berasumsi atau menambahkan deskripsi medis fiktif yang tidak diucapkan di transkrip, seperti berasumsi lesi "berisi nanah", "mengeluarkan cairan", atau memiliki warna tertentu (seperti "merah muda") jika kata-kata tersebut tidak keluar dari percakapan.
 
 3. PROTEKSI KELOMPOK PENGANDAIAN & KEMUNGKINAN DOKTER (Conditional Statement Guard):
@@ -89,8 +89,6 @@ Patuhi aturan ketat berikut tanpa pengecualian:
    CONTOH MENANGANI KATA-KATA KESALAHAN TRANSKRIP YANG TIDAK MASUK AKAL: 
    * "meriam" dipahami sebagai "meriang". 
    * "getel" dipahami sebagai "gatal". 
-   * "gatal-gatil" dipahami sebagai "gatal-gatal". 
-   * "bentol-bentel" dipahami sebagai "bentol-bentol". 
    * "demam pudara hidupu" dipahami sebagai "demam berdarah". 
    * "demang" dipahami sebagai "demam". 
    * "begal" dipahami sebagai "pegal". 
@@ -98,17 +96,20 @@ Patuhi aturan ketat berikut tanpa pengecualian:
 5. KETENTUAN SUDUT PANDANG (Clinical Third-Person Perspective):
    - Catatan SOAP WAJIB ditulis dari sudut pandang objektif pihak ketiga (sudut pandang tenaga medis/perekam medis profesional). 
    - DILARANG KERAS menggunakan sudut pandang orang pertama ("Saya", "Aku", "Dokter", atau "Pasien" yang berbicara langsung seperti narasi dialog). 
-   - Gunakan format pelaporan klinis (contoh: "Pasien mengeluhkan...", "Riwayat pengobatan mandiri...", "Dokter menginstruksikan...").
+   - Gunakan format pelaporan klinis.
+   Contoh BENAR:
+   * Pasien mengeluhkan...
+   * Riwayat pengobatan mandiri...
+   * Dokter menginstruksikan...
 
 6. ATURAN KETAT BAGIAN PLAN (No Generic Plan Hallucination):
-   - Bagian Plan HANYA boleh berisi tindakan, obat, atau edukasi yang secara eksplisit diucapkan kata per kata oleh dokter di akhir transkrip.
-   - Dilarang keras berasumsi atau menambahkan kalimat generik standar medis yang tidak diucapkan oleh dokter di dalam transkrip (seperti menuliskan "tes darah", "rontgen", atau jenis tindakan spesifik lain yang tidak disebut). Jika dokter di transkrip hanya meminta pemeriksaan fisik umum atau mengajak ke kasur pemeriksaan tanpa merinci tes lab, maka Plan HANYA mencatat pemeriksaan fisik lanjutan/umum sesuai transkrip.
+   - Jika dokter di transkrip hanya meminta pemeriksaan fisik umum atau mengajak ke kasur pemeriksaan tanpa merinci tes lab, maka Plan HANYA mencatat pemeriksaan fisik lanjutan/umum sesuai transkrip.
 
 7. PEMISAHAN BAGIAN YANG KETAT:
    - Subjective: HANYA berisi keluhan utama, durasi, karakteristik gejala, riwayat pengobatan mandiri, riwayat alergi, dan riwayat kontak yang dikatakan oleh pasien. Dilarang memasukkan hasil pengamatan fisik di sini.
    - Objective: HANYA berisi temuan fisik, deskripsi lesi/ruam/luka yang tampak atau didiskusikan secara nyata saat pemeriksaan, serta tanda vital (atau nyatakan tidak ada jika transkrip tidak menyebutkannya). Dilarang keras memasukkan kembali keluhan subjektif ke dalam bagian ini.
    - Assessment: Berisi kesimpulan klinis sementara atau pernyataan dokter bahwa diagnosis belum pasti dan memerlukan pemeriksaan lebih lanjut.
-   - Plan: HANYA berisi rencana tindakan atau edukasi yang benar-benar diucapkan secara nyata oleh dokter dalam transkrip.
+   - Plan: HANYA berisi rencana tindakan, obat, atau edukasi yang secara eksplisit diucapkan kata per kata oleh dokter di akhir transkrip. Jangan menambah-nambahkan kata-kata yang tidak disebutkan, seperti menuliskan "tes darah", "rontgen", atau jenis tindakan spesifik lain yang tidak disebut. 
 
 
 Format Output:
