@@ -18,6 +18,7 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Optional
+import os
 
 import requests
 
@@ -30,10 +31,12 @@ logger = logging.getLogger(__name__)
 LLAMA_SERVER_PATH = Path(__file__).parent.parent / "llama.cpp" / "build" / "bin" / "Release" / "llama-server.exe"
 
 PORT_RANGE_START = 8100
-HEALTH_CHECK_TIMEOUT_SECONDS = 120
+HEALTH_CHECK_TIMEOUT_SECONDS = 300
 HEALTH_CHECK_INTERVAL_SECONDS = 1
 
 DEFAULT_OV_DEVICE = "CPU"
+
+GPU_LAYERS_ON = "99"
 
 DEFAULT_MAX_TOKENS = 1024
 DEFAULT_TEMPERATURE = 0.8
@@ -64,7 +67,7 @@ class InferenceError(Exception):
 # Load / unload — public API, branches by engine internally
 # ---------------------------------------------------------------------------
 
-def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE) -> dict:
+def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE, use_gpu: bool = True) -> dict:
     """
     Loads a model using whichever engine it's registered under.
     `device` only applies to the openvino engine (e.g. "CPU", "GPU", "AUTO");
@@ -89,7 +92,7 @@ def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE) -> dict:
 
     engine = model["engine"]
     if engine == "llama_cpp":
-        entry = _load_llama_cpp(model_id, local_path)
+        entry = _load_llama_cpp(model_id, local_path, GPU_LAYERS_ON if use_gpu else 0)
     elif engine == "openvino":
         entry = _load_openvino(model_id, local_path, device)
     else:
@@ -134,19 +137,21 @@ def get_loaded_models() -> dict:
 # llama_cpp engine — subprocess + HTTP, same mechanics as before
 # ---------------------------------------------------------------------------
 
-def _load_llama_cpp(model_id: str, local_path: str) -> dict:
+def _load_llama_cpp(model_id: str, local_path: str, gpu_layers: int) -> dict:
     if not LLAMA_SERVER_PATH.exists():
         raise InferenceError(f"llama-server.exe not found at {LLAMA_SERVER_PATH}. Check the path.")
-
+    
     port = _find_free_port()
     logger.info(f"[{model_id}] Spawning llama-server on port {port} for {local_path}")
 
+    env = os.environ.copy()
+    if gpu_layers == 0:
+        env["CUDA_VISIBLE_DEVICES"] = "-1"
 
     try:
-        # Equivalent to running on the command line:
-        # ./build/bin/Release/llama-server -m <local_path> --port <port> 
         process = subprocess.Popen(
-            [str(LLAMA_SERVER_PATH), "-m", local_path, "-t", str(THREAD), "-tb", str(LOGICAL_PROCESSOR), "-c", str(CONTEXT_SIZE), "--port", str(port)],
+            # [str(LLAMA_SERVER_PATH), "-m", local_path, "-t", str(THREAD), "-tb", str(LOGICAL_PROCESSOR), "-c", str(CONTEXT_SIZE), "--port", str(port)],
+            [str(LLAMA_SERVER_PATH), "-m", local_path, "--port", str(port), "-ngl", str(gpu_layers)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )

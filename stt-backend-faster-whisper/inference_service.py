@@ -1,23 +1,41 @@
 import logging
 import time
 
+
+# For GPU use
+import glob, os, site
+for sp in site.getsitepackages():
+  for p in glob.glob(os.path.join(sp, "nvidia", "*", "bin")):
+    os.environ["PATH"] = p + os.pathsep + os.environ["PATH"]
+
+
+
 # For faster-whisper (CTranslate2-backed, no torch/optimum-intel needed)
 from faster_whisper import WhisperModel
+
 
 import numpy as np
 import librosa
 # import noisereduce
+
 
 import models_registry
 
 class InferenceError(Exception):
   """Raised for load/unload/transcribe failures the caller needs to handle explicitly."""
 
-DEFAULT_DEVICE = "cpu"          # "cpu" or "cuda"
-DEFAULT_COMPUTE_TYPE = "int8"   # quantization — "int8" for CPU, "float16" is typical for "cuda"
 
-BEAM_SIZE = 1
+
+# DEFAULT_DEVICE = "cpu"
+# DEFAULT_COMPUTE_TYPE = "int8"
+
+DEFAULT_DEVICE = "cuda"
+DEFAULT_COMPUTE_TYPE = "float16"
+
+BEAM_SIZE = 5
+
 INITIAL_PROMPT = "Transkripsi konsultasi medis antara dokter dan pasien. Percakapan ini membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
+
 # LIVE_INITIAL_PROMPT = "Transkripsi cuplikan konsultasi medis antara dokter dan pasien. Cuplikan ini berasal dari percakapan yang membahas anamnesis, riwayat penyakit, diagnosis, gejala klinis (seperti demam, nyeri dada, mual, batuk, pusing), pemeriksaan fisik, serta rencana pengobatan, resep obat, dosis, dan edukasi kesehatan dengan istilah medis yang akurat."
 LIVE_INITIAL_PROMPT = "Istilah medis dan gejala klinis: meriang, demam berdarah, DBD, demam, pusing, mual, batuk, sesak napas, nyeri dada, lemas, ruam, trombosit, tensi, tekanan darah, suhu tubuh, paracetamol, amoxicillin, ibuprofen, resep, diagnosis, anamnesis, pemeriksaan fisik, gatal."
 

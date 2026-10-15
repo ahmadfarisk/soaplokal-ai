@@ -159,10 +159,10 @@ def delete_model(model_id: str):
 # ---------------------------------------------------------------------------
 
 @app.post("/models/{model_id}/load")
-def load_model(model_id: str):
+def load_model(model_id: str, use_gpu: bool = True):
     """Spawns llama-server for this model and waits until it's ready to chat with."""
     try:
-        entry = inference_service.load_model(model_id)
+        entry = inference_service.load_model(model_id, use_gpu=use_gpu)
     except InferenceError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"status": "loaded", "model_id": model_id, "port": entry["port"]}

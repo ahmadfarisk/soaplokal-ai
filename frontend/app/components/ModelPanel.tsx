@@ -14,6 +14,7 @@ interface ModelPanelProps {
   loadedModelId: string | null;
   onLoadedChange: (modelId: string | null) => void;
   onError: (message: string) => void;
+  showGpuToggle?: boolean;
 }
 
 /**
@@ -28,10 +29,13 @@ export default function ModelPanel({
   loadedModelId,
   onLoadedChange,
   onError,
+  showGpuToggle,
 }: ModelPanelProps) {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const [useGpu, setUseGpu] = useState(true);
 
   async function refreshModels() {
     setBusy(true);
@@ -57,8 +61,9 @@ export default function ModelPanel({
     if (!selectedModelId) return;
     setBusy(true);
     try {
-      const res = await fetch(`${apiUrl}/models/${selectedModelId}/load`, { method: "POST" });
-      const data = await res.json();
+      const query = showGpuToggle ? `?use_gpu=${useGpu}` : "";
+      const res = await fetch(`${apiUrl}/models/${selectedModelId}/load${query}`, { method: "POST" });
+      const data = await res.json()
       if (!res.ok) {
         onError(data.detail || `Failed to load model (${res.status})`);
         return;
@@ -125,9 +130,19 @@ export default function ModelPanel({
         >
           Unload
         </button>
+        
+        {showGpuToggle && (
+          <label className="flex items-center gap-1 text-xs text-gray-400">
+            <input type="checkbox" checked={useGpu} onChange={(e) => setUseGpu(e.target.checked)} />
+            Use GPU
+          </label>
+        )}
+
+        {/* Load status */}
         <span className={`text-xs ${loadedModelId ? "text-green-700" : "text-gray-400"}`}>
           {loadedModelId ? `Loaded: ${loadedModelId}` : "No model loaded"}
         </span>
+
       </div>
     </section>
   );
