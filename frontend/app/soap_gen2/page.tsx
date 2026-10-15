@@ -76,11 +76,11 @@ Patuhi aturan ketat berikut tanpa pengecualian:
     * Tekanan darah: Informasi tidak disebutkan.
    - Waspadai penyangkalan pasien: Jika pasien menyatakan tidak memiliki riwayat alergi atau tidak pernah mengalami sesuatu, catat sebagai tidak ada. Jangan memutarbalikkan pernyataan pasien.
 
-2. ATURAN KETAT DESKRIPSI LESI / RUAM / FISIK (Visual Fact-Locking):
+2. ATURAN KETAT DESKRIPSI LESI / RUAM / FISIK:
    - Bagian Objective HANYA boleh mencatat bentuk, lokasi, atau kondisi fisik yang secara lisan dideskripsikan langsung oleh pasien atau dokter di dalam transkrip (misalnya: jumlah, lokasi di tubuh, atau kondisi pecah karena digaruk).
    - Dilarang keras berasumsi atau menambahkan deskripsi medis fiktif yang tidak diucapkan di transkrip, seperti berasumsi lesi "berisi nanah", "mengeluarkan cairan", atau memiliki warna tertentu (seperti "merah muda") jika kata-kata tersebut tidak keluar dari percakapan.
 
-3. PROTEKSI KELOMPOK PENGANDAIAN & KEMUNGKINAN DOKTER (Conditional Statement Guard):
+3. PROTEKSI KELOMPOK PENGANDAIAN & KEMUNGKINAN DOKTER:
    - Waspadai kalimat pengandaian, antisipasi, atau kemungkinan yang diucapkan oleh dokter (contoh: "kalau ada keluhan lain seperti nyeri...", "jika nanti muncul demam..."). 
    - Kalimat-kalimat bersyarat dari dokter BUKAN berarti pasien sedang mengalami gejala tersebut. Jangan pernah mencatat angan-angan atau skenario hipotesis dokter ke dalam bagian Subjective pasien.
 
