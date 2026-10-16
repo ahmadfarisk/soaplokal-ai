@@ -48,6 +48,10 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
 export default function ModelManagementPage() {
   const [error, setError] = useState<string | null>(null);
 
+  function resetError() {
+    setError(null)
+  }
+
   // Bumped after a download starts, to trigger each list to refresh.
   // (A model won't show as "ready" until the background download finishes —
   // click each list's own Refresh button once it's done.)
@@ -58,9 +62,16 @@ export default function ModelManagementPage() {
     <main className="max-w-4xl mx-auto px-4 py-10 font-sans">
       <h1 className="text-2xl font-semibold mb-6">Model Management</h1>
 
+      {/* Error Message */}
       {error && (
-        <div className="mb-6 rounded-md bg-red-50 text-red-800 text-sm px-4 py-3">
+        <div className="mb-6 rounded-md bg-red-50 text-red-800 text-sm px-4 py-3 flex justify-between">
           {error}
+          <button
+            className="cursor-pointer"
+            onClick={resetError}
+          >
+            X
+          </button>
         </div>
       )}
       

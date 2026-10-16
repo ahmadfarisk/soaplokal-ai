@@ -216,6 +216,7 @@ export default function SoapNotePage() {
               loadedModelId={sttModelId}
               onLoadedChange={setSttModelId}
               onError={setError}
+              showGpuToggle={true}
             />
 
             <TranscriptionPanel
@@ -250,6 +251,7 @@ export default function SoapNotePage() {
               loadedModelId={llmModelId}
               onLoadedChange={setLlmModelId}
               onError={setError}
+              showGpuToggle={true}
             />
 
             <GenerationParamsPanel params={genParams} onChange={setGenParams} />
