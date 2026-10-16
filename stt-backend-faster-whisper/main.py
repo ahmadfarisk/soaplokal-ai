@@ -5,7 +5,7 @@ The FastAPI entry point for the STT backend. Routes HTTP requests
 to models_registry.py, download_service.py, and inference_service.py. 
 Run with:
 
-uvicorn main:app --reload --port 8002
+uvicorn main:app --reload --port 8001
 """
 
 
