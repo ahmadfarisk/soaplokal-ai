@@ -12,6 +12,7 @@ import GenerationParamsPanel, {
 import LiveTranscriptionPanel from "@/components/LiveTranscriptionPanel";
 import MetricsDisplay from "@/components/MetricsDisplay";
 import { LlmMetrics, llmMetricItems } from "@/components/MetricsDisplay";
+import Link from "next/link";
 
 const STT_API_URL = process.env.NEXT_PUBLIC_FASTER_WHISPER_API_URL || "http://localhost:8002";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
@@ -181,7 +182,9 @@ export default function SoapNotePage() {
   }
 
   return (
-    <main className="w-full px-4 py-10 font-sans bg-black">
+    <main className="w-full px-4 py-5 font-sans bg-black">
+      <Link className="hover:text-green-500 text-white mb-6" href="/">Home</Link>
+
       <h1 className="w-fit mx-auto text-2xl font-semibold mb-6">SOAP Note Generator</h1>
 
       <div className="mx-auto w-5xl flex flex-col gap-5">

@@ -54,13 +54,13 @@ export default function HomePage() {
       
 
       <section className="flex flex-col items-center justify-start gap-4 mb-20 w-full">
-        <h2 className="text-2xl font-semibold mb-2">Feature</h2>
+        <h2 className="text-2xl font-semibold mb-2">Home</h2>
         <div className="flex gap-6 justify-center items-center w-full">
-          <Link className="hover:text-green-500 border p-3 rounded-lg" href="/model_manage">Manage models</Link>
-          <Link className="hover:text-green-500 border p-3 rounded-lg" href="/soap_gen">SOAP Note Gen</Link>
-          {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/llm">LLM</Link>
-          <Link className="hover:text-green-500 border p-3 rounded-lg" href="/llm_test">LLM test</Link>
-          <Link className="hover:text-green-500 border p-3 rounded-lg" href="/stt">STT</Link> */}
+          {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/model_manage">Manage models</Link> */}
+          <Link className="hover:text-green-500 border p-3 rounded-lg" href="/soap_gen">SOAP Note Generator</Link>
+          {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/llm">LLM</Link> */}
+          {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/llm_test">LLM Test</Link> */}
+          {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/stt">STT Test</Link> */}
         </div>
       </section>
       
