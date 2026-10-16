@@ -32,6 +32,7 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terinstal perangkat lun
 - **Node.js**
 - **CMake**
 - **FFmpeg**
+- **C++ compiler**
 - **Processor Intel** (diperlukan jika ingin menggunakan akselerasi OpenVINO)
 - **CUDA Toolkit** (diperlukan jika ingin menggunakan akselerasi GPU NVIDIA)
 

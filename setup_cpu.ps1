@@ -358,24 +358,7 @@ foreach ($r in $script:Results) {
 }
 
 Write-Host ""
-Write-Host "To run the app, open one terminal per service:" -ForegroundColor Cyan
-
-foreach ($b in $readyBackends) {
-    Write-Host ""
-    Write-Host "  # $($b.Name)"
-    Write-Host "  cd `"$(Join-Path $root $b.Name)`""
-    Write-Host "  .\venv\Scripts\Activate.ps1"
-    Write-Host "  uvicorn main:app --reload --port $($b.Port)"
-}
-
-if ($frontendReady) {
-    Write-Host ""
-    Write-Host "  # frontend"
-    Write-Host "  cd `"$frontendDir`""
-    Write-Host "  npm run dev"
-    Write-Host ""
-    Write-Host "  Then open http://localhost:3000"
-}
+Write-Host "To run the app, run ./start.ps1" -ForegroundColor Cyan
 
 Write-Host ""
 Write-Host "Models are not included — download them from the app's download panels on first use." -ForegroundColor DarkGray
