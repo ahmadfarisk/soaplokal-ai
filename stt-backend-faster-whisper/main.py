@@ -134,7 +134,7 @@ def delete_model(model_id: str):
 # ---------------------------------------------------------------------------
 
 @app.post("/models/{model_id}/load")
-def load_model(model_id: str):
+def load_model(model_id: str, use_gpu: bool = False):
     """Loads the model's pipeline into memory (in-process, not a subprocess)."""
     model = models_registry.get_model(model_id)
     if model is None:
@@ -145,8 +145,15 @@ def load_model(model_id: str):
             detail=f"Model '{model_id}' is not downloaded yet (status: {model['status']}).",
         )
 
+    # Switch to GPU if enabled
+    compute_type_use = 'int8'
+    device_use = 'cpu'
+    if use_gpu:
+        compute_type_use = 'float16'
+        device_use = 'cuda'
+
     try:
-        inference_service.load_model(model_id, model["local_path"])
+        inference_service.load_model(model_id, model["local_path"], device=device_use, compute_type=compute_type_use)
     except InferenceError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"status": "loaded", "model_id": model_id}

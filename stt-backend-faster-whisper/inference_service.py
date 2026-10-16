@@ -142,9 +142,7 @@ def transcribe(model_id: str, audio_path: str) -> dict:
 
 
 # Transcribe array
-def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int = 16000) -> dict:
-  # faster-whisper expects float32 audio at 16kHz, same as what
-  # resample_chunk() below already produces — no extra conversion needed.
+def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int = 16000, beam_size: int = BEAM_SIZE) -> dict:
   text, info, elapsed = _run_transcribe(
     model_id,
     audio_array,
@@ -155,7 +153,7 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
     task="transcribe",
     condition_on_previous_text=False,
     initial_prompt=LIVE_INITIAL_PROMPT,
-    beam_size=BEAM_SIZE,
+    beam_size=beam_size,
     without_timestamps=True,
   )
 

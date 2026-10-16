@@ -216,6 +216,7 @@ export default function SoapNotePage() {
               loadedModelId={sttModelId}
               onLoadedChange={setSttModelId}
               onError={setError}
+              showGpuToggle={true}
             />
 
             <TranscriptionPanel

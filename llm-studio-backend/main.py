@@ -159,7 +159,7 @@ def delete_model(model_id: str):
 # ---------------------------------------------------------------------------
 
 @app.post("/models/{model_id}/load")
-def load_model(model_id: str, use_gpu: bool = True):
+def load_model(model_id: str, use_gpu: bool = False):
     """Spawns llama-server for this model and waits until it's ready to chat with."""
     try:
         entry = inference_service.load_model(model_id, use_gpu=use_gpu)

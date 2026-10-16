@@ -67,7 +67,7 @@ class InferenceError(Exception):
 # Load / unload — public API, branches by engine internally
 # ---------------------------------------------------------------------------
 
-def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE, use_gpu: bool = True) -> dict:
+def load_model(model_id: str, use_gpu: bool = True) -> dict:
     """
     Loads a model using whichever engine it's registered under.
     `device` only applies to the openvino engine (e.g. "CPU", "GPU", "AUTO");
@@ -91,10 +91,12 @@ def load_model(model_id: str, device: str = DEFAULT_OV_DEVICE, use_gpu: bool = T
         raise InferenceError(f"Model file/folder missing on disk: {local_path}")
 
     engine = model["engine"]
+    # Llama.cpp engine
     if engine == "llama_cpp":
         entry = _load_llama_cpp(model_id, local_path, GPU_LAYERS_ON if use_gpu else 0)
+    # OpenVINO engine
     elif engine == "openvino":
-        entry = _load_openvino(model_id, local_path, device)
+        entry = _load_openvino(model_id, local_path, DEFAULT_OV_DEVICE if use_gpu else "GPU")
     else:
         raise InferenceError(f"Unknown engine '{engine}' for model '{model_id}'.")
 
@@ -395,28 +397,28 @@ def _wait_for_healthy(port: int) -> bool:
 # Manual test
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    models_registry.init_db()
+# if __name__ == "__main__":
+#     logging.basicConfig(level=logging.INFO)
+#     models_registry.init_db()
 
-    # --- llama_cpp engine ---
-    LLAMA_MODEL_ID = "qwen2.5-1.5b-q4"
-    try:
-        load_model(LLAMA_MODEL_ID)
-        result = chat(LLAMA_MODEL_ID, "Say hi in one sentence.")
-        print("[llama_cpp]", result["choices"][0]["message"]["content"])
-    except InferenceError as e:
-        print(f"[llama_cpp] Error: {e}")
-    finally:
-        unload_model(LLAMA_MODEL_ID)
+#     # --- llama_cpp engine ---
+#     LLAMA_MODEL_ID = "qwen2.5-1.5b-q4"
+#     try:
+#         load_model(LLAMA_MODEL_ID)
+#         result = chat(LLAMA_MODEL_ID, "Say hi in one sentence.")
+#         print("[llama_cpp]", result["choices"][0]["message"]["content"])
+#     except InferenceError as e:
+#         print(f"[llama_cpp] Error: {e}")
+#     finally:
+#         unload_model(LLAMA_MODEL_ID)
 
-    # --- openvino engine ---
-    OV_MODEL_ID = "qwen2.5-1.5b-ov-8bit"
-    try:
-        load_model(OV_MODEL_ID, device="AUTO")
-        result = chat(OV_MODEL_ID, "Say hi in one sentence.")
-        print("[openvino]", result["choices"][0]["message"]["content"])
-    except InferenceError as e:
-        print(f"[openvino] Error: {e}")
-    finally:
-        unload_model(OV_MODEL_ID)
+#     # --- openvino engine ---
+#     OV_MODEL_ID = "qwen2.5-1.5b-ov-8bit"
+#     try:
+#         load_model(OV_MODEL_ID, device="AUTO")
+#         result = chat(OV_MODEL_ID, "Say hi in one sentence.")
+#         print("[openvino]", result["choices"][0]["message"]["content"])
+#     except InferenceError as e:
+#         print(f"[openvino] Error: {e}")
+#     finally:
+#         unload_model(OV_MODEL_ID)
