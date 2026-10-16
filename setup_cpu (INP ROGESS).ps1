@@ -33,8 +33,7 @@ $root = $PSScriptRoot
 # ---------------------------------------------------------------------------
 $backends = @(
     @{ Name = "llm-studio-backend";          Port = 8000; Optional = $false },
-    @{ Name = "stt-backend";                 Port = 8001; Optional = $false },
-    @{ Name = "stt-backend-faster-whisper";  Port = 8002; Optional = $true  }
+    @{ Name = "stt-backend-faster-whisper";  Port = 8001; Optional = $false  }
 )
 $frontendDir = Join-Path $root "frontend"
 $llamaDir    = Join-Path $root "llama.cpp"
@@ -236,7 +235,7 @@ foreach ($b in $backends) {
         $requirements = Join-Path $dir "requirements.txt"
         if (-not (Test-Path $requirements)) { throw "requirements.txt not found in $dir" }
 
-        $venvDir    = Join-Path $dir "venv"
+        $venvDir    = Join-Path $dir ".venv"
         $venvPython = Join-Path $venvDir "Scripts\python.exe"
 
         if (-not (Test-Path $venvPython)) {
@@ -297,8 +296,7 @@ if (Test-Path $frontendDir) {
                 if ($b.Optional -and -not (Test-Path (Join-Path $root $b.Name))) { continue }
                 switch ($b.Name) {
                     "llm-studio-backend"         { $varName = "NEXT_PUBLIC_LLM_API_URL" }
-                    "stt-backend"                { $varName = "NEXT_PUBLIC_STT_API_URL" }
-                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_FASTER_WHISPER_API_URL" }
+                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_STT_API_URL" }
                 }
                 $url = Read-Default "URL for $($b.Name)" "http://localhost:$($b.Port)"
                 $lines += "$varName=$url"
