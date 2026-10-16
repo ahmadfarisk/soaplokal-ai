@@ -1,3 +1,12 @@
+
+
+
+
+# ⚠️ WARNING ⚠️
+## Proyek ini masih belum selesai! Instalasi/setup (setup_cpu.ps1 dan setup_gpu.ps1) belum diuji!
+
+---
+
 # SOAPLocal AI 🩺🤖
 
 Aplikasi web berbasis kecerdasan buatan (AI) lokal yang dirancang khusus untuk mentranskripsikan percakapan antara dokter dan pasien secara *real-time* atau melalui unggahan audio, serta otomatis menghasilkan catatan medis berformat **SOAP** (*Subjective, Objective, Assessment, Plan*). 
