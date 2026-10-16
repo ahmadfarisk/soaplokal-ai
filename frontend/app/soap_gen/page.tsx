@@ -13,50 +13,36 @@ import LiveTranscriptionPanel from "@/components/LiveTranscriptionPanel";
 import MetricsDisplay from "@/components/MetricsDisplay";
 import { LlmMetrics, llmMetricItems } from "@/components/MetricsDisplay";
 
-const STT_API_URL = process.env.NEXT_PUBLIC_STT_API_URL || "http://localhost:8001";
+const STT_API_URL = process.env.NEXT_PUBLIC_FASTER_WHISPER_API_URL || "http://localhost:8002";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
 
 const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<string, string> }[] = [
   {
-    model_id: 'whisper-tiny-int8-ov',
-    label: 'Whisper Tiny (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-tiny-int8-ov' },
+    model_id: 'faster-whisper-small',
+    label: 'Faster Whisper Small',
+    extra: { hf_model_id: 'Systran/faster-whisper-small' },
   },
   {
-    model_id: 'whisper-base-int8-ov',
-    label: 'Whisper Base (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-base-int8-ov' },
+    model_id: 'faster-whisper-medium',
+    label: 'Faster Whisper Medium',
+    extra: { hf_model_id: 'Systran/faster-whisper-medium' },
   },
   {
-    model_id: 'whisper-small-int8-ov',
-    label: 'Whisper Small (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-small-int8-ov' },
+    model_id: 'faster-whisper-medium-id',
+    label: 'jerichosiahaya\'s Faster Whisper Medium ID',
+    extra: { hf_model_id: 'jerichosiahaya/faster-whisper-medium-id' },
   },
   {
-    model_id: 'whisper-medium-int8-ov',
-    label: 'Whisper Medium (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-medium-int8-ov' },
+    model_id: 'faster-whisper-large-v3-turbo-ct2',
+    label: 'deepdml\'s Faster Whisper Large Turbo',
+    extra: { hf_model_id: 'deepdml/faster-whisper-large-v3-turbo-ct2' },
   },
   {
-    model_id: 'whisper-large-v3-int8-ov',
-    label: 'Whisper V3 Large (INT8)',
-    extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
+    model_id: 'faster-whisper-large-v3',
+    label: 'Faster Whisper Large',
+    extra: { hf_model_id: 'Systran/faster-whisper-large-v3' },
   },
-  {
-    model_id: 'whisper-large-v3-turbo-int8-ov',
-    label: 'Whisper V3 Large (INT8) Turbo',
-    extra: { hf_model_id: 'OpenVINO/whisper-large-v3-turbo-int8-ov' },
-  },
-  {
-    model_id: 'bweng-whisper-large-v3-turbo-int8-ov',
-    label: 'bweng\'s Whisper V3 Large (INT8) Turbo',
-    extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-fp16-ov' },
-  },
-  // {
-  //   model_id: 'distil-whisper-large-v3-int8-ov',
-  //   label: 'Distil Whisper V3 Large (INT8)',
-  //   extra: { hf_model_id: 'OpenVINO/distil-whisper-large-v3-int8-ov' },
-  // },
+  
 ];
 
 // function buildSoapPrompt(transcript: string): string {
@@ -68,12 +54,73 @@ const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<
 // ${transcript}`;
 // }
 
+// function buildSoapPrompt(transcript: string): string {
+//   return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP dalam Bahasa Indonesia. 
+
+// Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan. Jangan menambahkan informasi yang tidak ada pada transkrip untuk bagian Objective.
+
+// Transkrip:
+// ${transcript}`;
+// }
 function buildSoapPrompt(transcript: string): string {
-  return `Anda adalah asisten dokumentasi medis. Ubah transkrip percakapan berikut ini menjadi catatan SOAP.
+  return `Anda adalah seorang asisten dokumentasi medis profesional yang sangat objektif, teliti, dan berbasis fakta mutlak (strict evidence-based). Tugas Anda adalah mengubah transkrip percakapan antara dokter dan pasien di bawah ini menjadi catatan SOAP (Subjective, Objective, Assessment, Plan) dalam Bahasa Indonesia.
 
-Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut: "Subjective:", "Objective:", "Assessment:", "Plan:". Tuliskan hanya catatan SOAP itu sendiri — tanpa kata pengantar, tanpa komentar tambahan.
+Patuhi aturan ketat berikut tanpa pengecualian:
 
-Transkrip:
+1. KONTROL FAKTA & LARANGAN HALUSINASI NUMERIK / MEDIS:
+   - HANYA tuliskan informasi yang secara eksplisit ada di dalam transkrip. 
+   - Dilarang keras mengarang, menebak, atau menambahkan prosedur medis, pemeriksaan penunjang (seperti tes darah, rontgen, biopsi, lab), maupun jenis obat yang TIDAK DISEBUTKAN secara eksplisit oleh dokter atau pasien di dalam transkrip.
+   - ATURAN KHUSUS BAGIAN OBJECTIVE (Tanda Vital & Pemeriksaan Fisik): Jika dokter atau pasien TIDAK MENYEBUTKAN nilai tanda vital tertentu (seperti tekanan darah, suhu tubuh, atau denyut nadi) di dalam transkrip, DILARANG KERAS MENGARANG ANGKA (contoh: jangan menulis 120/80 mmHg atau 36.5°C jika tidak disebut). Anda WAJIB menuliskan secara jujur: "Informasi tidak disebutkan dalam transkrip" atau "Data tanda vital tidak tersedia".
+   - CONTOH PENANGANAN DATA KOSONG:
+    * Suhu tubuh: Informasi tidak disebutkan.
+    * Tekanan darah: Informasi tidak disebutkan.
+   - Waspadai penyangkalan pasien: Jika pasien menyatakan tidak memiliki riwayat alergi atau tidak pernah mengalami sesuatu, catat sebagai tidak ada. Jangan memutarbalikkan pernyataan pasien.
+
+2. ATURAN KETAT DESKRIPSI LESI / RUAM / FISIK:
+   - Bagian Objective HANYA boleh mencatat bentuk, lokasi, atau kondisi fisik yang secara lisan dideskripsikan langsung oleh pasien atau dokter di dalam transkrip (misalnya: jumlah, lokasi di tubuh, atau kondisi pecah karena digaruk).
+   - Dilarang keras berasumsi atau menambahkan deskripsi medis fiktif yang tidak diucapkan di transkrip, seperti berasumsi lesi "berisi nanah", "mengeluarkan cairan", atau memiliki warna tertentu (seperti "merah muda") jika kata-kata tersebut tidak keluar dari percakapan.
+
+3. PROTEKSI KELOMPOK PENGANDAIAN & KEMUNGKINAN DOKTER:
+   - Waspadai kalimat pengandaian, antisipasi, atau kemungkinan yang diucapkan oleh dokter (contoh: "kalau ada keluhan lain seperti nyeri...", "jika nanti muncul demam..."). 
+   - Kalimat-kalimat bersyarat dari dokter BUKAN berarti pasien sedang mengalami gejala tersebut. Jangan pernah mencatat angan-angan atau skenario hipotesis dokter ke dalam bagian Subjective pasien.
+
+4. KOREKSI KONSEPTUAL ASR TYPO:
+   - Terjemahkan kesalahan ketik otomatis (typo dari speech-to-text) secara masuk akal, dan frasa keliru mengenai lokasi pemeriksaan dipahami secara logis sesuai konteks percakapan medis, bukan ditelan secara harfiah. 
+   CONTOH MENANGANI KATA-KATA KESALAHAN TRANSKRIP YANG TIDAK MASUK AKAL: 
+   * "meriam" dipahami sebagai "meriang". 
+   * "getel" dipahami sebagai "gatal". 
+   * "demam pudara hidupu" dipahami sebagai "demam berdarah". 
+   * "demang" dipahami sebagai "demam". 
+   * "begal" dipahami sebagai "pegal". 
+
+5. KETENTUAN SUDUT PANDANG (Clinical Third-Person Perspective):
+   - Catatan SOAP WAJIB ditulis dari sudut pandang objektif pihak ketiga (sudut pandang tenaga medis/perekam medis profesional). 
+   - DILARANG KERAS menggunakan sudut pandang orang pertama ("Saya", "Aku", "Dokter", atau "Pasien" yang berbicara langsung seperti narasi dialog). 
+   - Gunakan format pelaporan klinis.
+   Contoh BENAR:
+   * Pasien mengeluhkan...
+   * Riwayat pengobatan mandiri...
+   * Dokter menginstruksikan...
+
+6. ATURAN KETAT BAGIAN PLAN (No Generic Plan Hallucination):
+   - Jika dokter di transkrip hanya meminta pemeriksaan fisik umum atau mengajak ke kasur pemeriksaan tanpa merinci tes lab, maka Plan HANYA mencatat pemeriksaan fisik lanjutan/umum sesuai transkrip.
+
+7. PEMISAHAN BAGIAN YANG KETAT:
+   - Subjective: HANYA berisi keluhan utama, durasi, karakteristik gejala, riwayat pengobatan mandiri, riwayat alergi, dan riwayat kontak yang dikatakan oleh pasien. Dilarang memasukkan hasil pengamatan fisik di sini.
+   - Objective: HANYA berisi temuan fisik, deskripsi lesi/ruam/luka yang tampak atau didiskusikan secara nyata saat pemeriksaan, serta tanda vital (atau nyatakan tidak ada jika transkrip tidak menyebutkannya). Dilarang keras memasukkan kembali keluhan subjektif ke dalam bagian ini.
+   - Assessment: Berisi kesimpulan klinis sementara atau pernyataan dokter bahwa diagnosis belum pasti dan memerlukan pemeriksaan lebih lanjut.
+   - Plan: HANYA berisi rencana tindakan, obat, atau edukasi yang secara eksplisit diucapkan kata per kata oleh dokter di akhir transkrip. Jangan menambah-nambahkan kata-kata yang tidak disebutkan, seperti menuliskan "tes darah", "rontgen", atau jenis tindakan spesifik lain yang tidak disebut. 
+
+
+Format Output:
+Gunakan tepat empat judul bagian ini, masing-masing pada baris tersendiri, dalam urutan berikut tanpa tambahan kata pengantar atau komentar di luar format:
+
+Subjective:
+Objective:
+Assessment:
+Plan:
+
+Berikut adalah transkrip percakapan yang harus Anda ubah:
 ${transcript}`;
 }
 
@@ -98,6 +145,8 @@ export default function SoapNotePage() {
 
   async function handleGenerate() {
     if (!transcript.trim() || !llmModelId) return;
+    console.log("Generating with", genParams)
+
     setGenerating(true);
     setError(null);
     setSoapNote("");
@@ -118,6 +167,7 @@ export default function SoapNotePage() {
         return;
       }
       const reply = data.choices?.[0]?.message?.content ?? "";
+      console.log(data)
       setSoapNote(reply);
 
       // Result Metrics
@@ -166,6 +216,7 @@ export default function SoapNotePage() {
               loadedModelId={sttModelId}
               onLoadedChange={setSttModelId}
               onError={setError}
+              showGpuToggle={true}
             />
 
             <TranscriptionPanel
@@ -200,6 +251,7 @@ export default function SoapNotePage() {
               loadedModelId={llmModelId}
               onLoadedChange={setLlmModelId}
               onError={setError}
+              showGpuToggle={true}
             />
 
             <GenerationParamsPanel params={genParams} onChange={setGenParams} />

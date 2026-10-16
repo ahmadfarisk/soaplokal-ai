@@ -109,7 +109,7 @@ export default function ModelPanel({
         <button
           disabled={busy}
           onClick={refreshModels}
-          className="rounded-md border border-gray-300 text-sm px-4 py-2 disabled:opacity-40"
+          className="rounded-md border border-gray-300 text-sm px-4 py-2 disabled:opacity-40 hover:bg-gray-800 cursor-pointer disabled:cursor-default"
         >
           Refresh
         </button>
@@ -119,14 +119,14 @@ export default function ModelPanel({
         <button
           disabled={busy || !selectedModelId}
           onClick={handleLoad}
-          className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40"
+          className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
         >
           Load
         </button>
         <button
           disabled={busy || !loadedModelId}
           onClick={handleUnload}
-          className="rounded-md border border-gray-300 text-sm px-4 py-2 disabled:opacity-40"
+          className="rounded-md border border-gray-300 text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
         >
           Unload
         </button>

@@ -141,7 +141,7 @@ export default function DownloadPanel({
             <button
               disabled={busy || !selectedOption}
               onClick={handleDropdownDownload}
-              className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40"
+              className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               Download
             </button>
@@ -192,7 +192,7 @@ export default function DownloadPanel({
             <button
               disabled={busy}
               onClick={handleFreeformDownload}
-              className="self-start rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40"
+              className="self-start rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               Download
             </button>

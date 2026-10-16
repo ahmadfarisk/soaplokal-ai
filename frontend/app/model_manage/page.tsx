@@ -8,42 +8,34 @@ const STT_API_URL = process.env.NEXT_PUBLIC_FASTER_WHISPER_API_URL || "http://lo
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
 
 const STT_DOWNLOADABLE_MODELS: { model_id: string; label: string; extra: Record<string, string> }[] = [
-  // {
-  //   model_id: 'whisper-tiny-int8-ov',
-  //   label: 'Whisper Tiny (INT8)',
-  //   extra: { hf_model_id: 'OpenVINO/whisper-tiny-int8-ov' },
-  // },
-  // {
-  //   model_id: 'whisper-base-int8-ov',
-  //   label: 'Whisper Base (INT8)',
-  //   extra: { hf_model_id: 'OpenVINO/whisper-base-int8-ov' },
-  // },
-  // {
-  //   model_id: 'whisper-small-int8-ov',
-  //   label: 'Whisper Small (INT8)',
-  //   extra: { hf_model_id: 'OpenVINO/whisper-small-int8-ov' },
-  // },
-  // {
-  //   model_id: 'whisper-medium-int8-ov',
-  //   label: 'Whisper Medium (INT8)',
-  //   extra: { hf_model_id: 'OpenVINO/whisper-medium-int8-ov' },
-  // },
-  // {
-  //   model_id: 'whisper-large-v3-int8-ov',
-  //   label: 'Whisper V3 Large (INT8)',
-  //   extra: { hf_model_id: 'OpenVINO/whisper-large-v3-int8-ov' },
-  // },
-  // {
-  //   model_id: 'whisper-large-v3-turbo-int8-ov',
-  //   label: 'Whisper V3 Large (INT8) Turbo',
-  //   extra: { hf_model_id: 'OpenVINO/whisper-large-v3-turbo-int8-ov' },
-  // },
-  // {
-  //   model_id: 'bweng-whisper-large-v3-turbo-int8-ov',
-  //   label: 'bweng\'s Whisper V3 Large (INT8) Turbo',
-  //   extra: { hf_model_id: 'bweng/whisper-large-v3-turbo-int8-ov' },
-  // },
+  {
+    model_id: 'faster-whisper-small',
+    label: 'Faster Whisper Small',
+    extra: { hf_model_id: 'Systran/faster-whisper-small' },
+  },
+  {
+    model_id: 'faster-whisper-medium',
+    label: 'Faster Whisper Medium',
+    extra: { hf_model_id: 'Systran/faster-whisper-medium' },
+  },
+  {
+    model_id: 'faster-whisper-medium-id',
+    label: 'jerichosiahaya\'s Faster Whisper Medium ID',
+    extra: { hf_model_id: 'jerichosiahaya/faster-whisper-medium-id' },
+  },
+  {
+    model_id: 'faster-whisper-large-v3-turbo-ct2',
+    label: 'deepdml\'s Faster Whisper Large Turbo',
+    extra: { hf_model_id: 'deepdml/faster-whisper-large-v3-turbo-ct2' },
+  },
+  {
+    model_id: 'faster-whisper-large-v3',
+    label: 'Faster Whisper Large',
+    extra: { hf_model_id: 'Systran/faster-whisper-large-v3' },
+  },
+  
 ];
+
 
 export default function ModelManagementPage() {
   const [error, setError] = useState<string | null>(null);
@@ -52,9 +44,6 @@ export default function ModelManagementPage() {
     setError(null)
   }
 
-  // Bumped after a download starts, to trigger each list to refresh.
-  // (A model won't show as "ready" until the background download finishes —
-  // click each list's own Refresh button once it's done.)
   const [llmRefreshSignal, setLlmRefreshSignal] = useState(0);
   const [sttRefreshSignal, setSttRefreshSignal] = useState(0);
 
