@@ -36,9 +36,9 @@ $logDir = Join-Path $root "logs"
 # Services — add a line here to launch another one (e.g. a second STT backend)
 # ---------------------------------------------------------------------------
 $services = @(
-    @{ Name = "llm"; Label = "LLM backend"; Kind = "python"; Dir = "llm-studio-backend";         Port = 8000; Url = "http://localhost:8000/docs"; Timeout = 180 },
-    @{ Name = "stt"; Label = "STT backend"; Kind = "python"; Dir = "stt-backend-faster-whisper"; Port = 8001; Url = "http://localhost:8001/docs"; Timeout = 180 },
-    @{ Name = "web"; Label = "Frontend";    Kind = "npm";    Dir = "frontend";                   Port = 3000; Url = "http://localhost:3000";      Timeout = 240 }
+    @{ Name = "llm"; Label = "LLM backend"; Kind = "python"; Dir = "llm-studio-backend"; Port = 8000; Url = "http://localhost:8000/docs"; Timeout = 180 },
+    @{ Name = "stt"; Label = "STT backend"; Kind = "python"; Dir = "stt-backend";        Port = 8001; Url = "http://localhost:8001/docs"; Timeout = 180 },
+    @{ Name = "web"; Label = "Frontend";    Kind = "npm";    Dir = "frontend";           Port = 3000; Url = "http://localhost:3000";      Timeout = 240 }
 )
 
 # Lines matching this are echoed to the terminal (case-sensitive on purpose,
@@ -138,11 +138,11 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { $problems += "npm no
 foreach ($s in $services) {
     $dir = Join-Path $root $s.Dir
     if (-not (Test-Path $dir)) { $problems += "Folder not found: $dir"; continue }
-    if ($s.Kind -eq "python" -and -not (Test-Path (Join-Path $dir ".venv\Scripts\python.exe"))) {
-        $problems += "$($s.Label): no venv in $($s.Dir). Run setup.ps1 first."
+    if ($s.Kind -eq "python" -and -not (Test-Path (Join-Path $dir "venv\Scripts\python.exe"))) {
+        $problems += "$($s.Label): no venv in $($s.Dir). Run setup_cpu.ps1 or setup_gpu.ps1 first."
     }
     if ($s.Kind -eq "npm" -and -not (Test-Path (Join-Path $dir "node_modules"))) {
-        $problems += "$($s.Label): node_modules missing. Run setup.ps1 (or npm install) first."
+        $problems += "$($s.Label): node_modules missing. Run setup_cpu.ps1 or setup_gpu.ps1 (or npm install) first."
     }
     if (Get-NetTCPConnection -LocalPort $s.Port -State Listen -ErrorAction SilentlyContinue) {
         $problems += "Port $($s.Port) ($($s.Label)) is already in use. A previous run may still be going: check Task Manager for python, node or llama-server."
@@ -175,7 +175,7 @@ try {
         Remove-Item $outLog, $errLog -ErrorAction SilentlyContinue
 
         if ($s.Kind -eq "python") {
-            $python   = Join-Path $dir ".venv\Scripts\python.exe"
+            $python   = Join-Path $dir "venv\Scripts\python.exe"
             $procArgs = @("-m", "uvicorn", "main:app", "--port", "$($s.Port)")
             if ($Dev) { $procArgs += "--reload" }
             $proc = Start-Process -FilePath $python -ArgumentList $procArgs -WorkingDirectory $dir `
