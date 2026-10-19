@@ -123,6 +123,7 @@ def transcribe(model_id: str, audio_path: str) -> dict:
     no_repeat_ngram_size=3,
     language="id",
     task="transcribe",
+    condition_on_previous_text=False,
     initial_prompt=INITIAL_PROMPT,
     beam_size=BEAM_SIZE,
   )
@@ -146,7 +147,7 @@ def transcribe_array(model_id: str, audio_array: np.ndarray, sampling_rate: int 
   text, info, elapsed = _run_transcribe(
     model_id,
     audio_array,
-    temperature=0,
+    temperature=0.1,
     repetition_penalty=1.1,
     no_repeat_ngram_size=3,
     language="id",  # faster-whisper expects an ISO-639-1 code, not "indonesian"

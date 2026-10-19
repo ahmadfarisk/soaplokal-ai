@@ -1,13 +1,16 @@
 <#
 .SYNOPSIS
-  One-shot setup for the local-ai project (LLM backend, STT backend, frontend).
+  One-shot CPU-only setup for the local-ai project (LLM backend, STT backend, frontend).
 
 .DESCRIPTION
+  Use this on machines WITHOUT an NVIDIA GPU. With an NVIDIA GPU, run
+  setup_gpu.ps1 instead (it is a complete setup on its own, with CUDA support).
+
   Run from the repo root (the folder containing llm-studio-backend, stt-backend
   and frontend). Safe to re-run: finished steps are skipped or refreshed.
 
   If PowerShell blocks the script, run it like this instead:
-    powershell -ExecutionPolicy Bypass -File .\setup.ps1
+    powershell -ExecutionPolicy Bypass -File .\setup_cpu.ps1
 
 .PARAMETER SkipLlamaCpp
   Don't clone/build llama.cpp (e.g. you only use OpenVINO models).
@@ -33,7 +36,8 @@ $root = $PSScriptRoot
 # ---------------------------------------------------------------------------
 $backends = @(
     @{ Name = "llm-studio-backend";          Port = 8000; Optional = $false },
-    @{ Name = "stt-backend-faster-whisper";  Port = 8001; Optional = $false  }
+    @{ Name = "stt-backend";                 Port = 8001; Optional = $false },
+    @{ Name = "stt-backend-faster-whisper";  Port = 8002; Optional = $true  }
 )
 $frontendDir = Join-Path $root "frontend"
 $llamaDir    = Join-Path $root "llama.cpp"
@@ -181,6 +185,12 @@ if ($fatalMissing) {
     exit 1
 }
 
+if (Test-Command "nvidia-smi") {
+    Write-Host ""
+    Write-Host "Tip: an NVIDIA GPU was detected. This script sets up the CPU-only version." -ForegroundColor Yellow
+    Write-Host "     setup_gpu.ps1 sets up CUDA acceleration instead, which is much faster. Press Ctrl+C now to switch, or carry on for CPU." -ForegroundColor Yellow
+}
+
 # ---------------------------------------------------------------------------
 # 2. llama.cpp (cloned as a sibling of the backends — the LLM backend expects it there)
 # ---------------------------------------------------------------------------
@@ -235,7 +245,7 @@ foreach ($b in $backends) {
         $requirements = Join-Path $dir "requirements.txt"
         if (-not (Test-Path $requirements)) { throw "requirements.txt not found in $dir" }
 
-        $venvDir    = Join-Path $dir ".venv"
+        $venvDir    = Join-Path $dir "venv"
         $venvPython = Join-Path $venvDir "Scripts\python.exe"
 
         if (-not (Test-Path $venvPython)) {
@@ -296,7 +306,8 @@ if (Test-Path $frontendDir) {
                 if ($b.Optional -and -not (Test-Path (Join-Path $root $b.Name))) { continue }
                 switch ($b.Name) {
                     "llm-studio-backend"         { $varName = "NEXT_PUBLIC_LLM_API_URL" }
-                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_STT_API_URL" }
+                    "stt-backend"                { $varName = "NEXT_PUBLIC_STT_API_URL" }
+                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_FASTER_WHISPER_API_URL" }
                 }
                 $url = Read-Default "URL for $($b.Name)" "http://localhost:$($b.Port)"
                 $lines += "$varName=$url"
@@ -358,7 +369,26 @@ foreach ($r in $script:Results) {
 }
 
 Write-Host ""
-Write-Host "To run the app, run ./start.ps1" -ForegroundColor Cyan
+Write-Host "Easiest: run .\start.ps1 to launch everything from one terminal." -ForegroundColor Green
+Write-Host ""
+Write-Host "Or run each service yourself, one terminal per service:" -ForegroundColor Cyan
+
+foreach ($b in $readyBackends) {
+    Write-Host ""
+    Write-Host "  # $($b.Name)"
+    Write-Host "  cd `"$(Join-Path $root $b.Name)`""
+    Write-Host "  .\venv\Scripts\Activate.ps1"
+    Write-Host "  uvicorn main:app --reload --port $($b.Port)"
+}
+
+if ($frontendReady) {
+    Write-Host ""
+    Write-Host "  # frontend"
+    Write-Host "  cd `"$frontendDir`""
+    Write-Host "  npm run dev"
+    Write-Host ""
+    Write-Host "  Then open http://localhost:3000"
+}
 
 Write-Host ""
 Write-Host "Models are not included — download them from the app's download panels on first use." -ForegroundColor DarkGray

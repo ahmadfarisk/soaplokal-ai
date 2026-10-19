@@ -2,7 +2,7 @@
 $llmBackendScript = @"
 Set-Location '$PSScriptRoot\llm-studio-backend'
 Write-Host 'Activating virtual environment...' -ForegroundColor Cyan
-.\lai012-venv\Scripts\activate
+.\.venv\Scripts\activate
 Write-Host 'Starting LLM Uvicorn server...' -ForegroundColor Cyan
 uvicorn main:app --reload --port 8000
 "@

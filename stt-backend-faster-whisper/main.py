@@ -363,6 +363,8 @@ KNOWN_HALLUCINATIONS = {
     "sampai jumpa di video selanjutnya",
     "ini adalah percakapan antara seorang dokter dan pasiennya",
     "terima kasih yang menonton",
+    "berita terkini di video ini",
+    "sekarang kita akan belajar bahasa inggris di jepang",
 }
 
 def is_hallucination(text: str) -> bool:
