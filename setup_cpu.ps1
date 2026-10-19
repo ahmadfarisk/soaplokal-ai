@@ -36,8 +36,7 @@ $root = $PSScriptRoot
 # ---------------------------------------------------------------------------
 $backends = @(
     @{ Name = "llm-studio-backend";          Port = 8000; Optional = $false },
-    @{ Name = "stt-backend";                 Port = 8001; Optional = $false },
-    @{ Name = "stt-backend-faster-whisper";  Port = 8002; Optional = $true  }
+    @{ Name = "stt-backend-faster-whisper";  Port = 8001; Optional = $false  }
 )
 $frontendDir = Join-Path $root "frontend"
 $llamaDir    = Join-Path $root "llama.cpp"
@@ -245,7 +244,7 @@ foreach ($b in $backends) {
         $requirements = Join-Path $dir "requirements.txt"
         if (-not (Test-Path $requirements)) { throw "requirements.txt not found in $dir" }
 
-        $venvDir    = Join-Path $dir "venv"
+        $venvDir    = Join-Path $dir ".venv"
         $venvPython = Join-Path $venvDir "Scripts\python.exe"
 
         if (-not (Test-Path $venvPython)) {
@@ -306,8 +305,7 @@ if (Test-Path $frontendDir) {
                 if ($b.Optional -and -not (Test-Path (Join-Path $root $b.Name))) { continue }
                 switch ($b.Name) {
                     "llm-studio-backend"         { $varName = "NEXT_PUBLIC_LLM_API_URL" }
-                    "stt-backend"                { $varName = "NEXT_PUBLIC_STT_API_URL" }
-                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_FASTER_WHISPER_API_URL" }
+                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_STT_API_URL" }
                 }
                 $url = Read-Default "URL for $($b.Name)" "http://localhost:$($b.Port)"
                 $lines += "$varName=$url"
@@ -323,7 +321,7 @@ if (Test-Path $frontendDir) {
 # log in once through huggingface_hub — it stores the token where every
 # HF download call picks it up automatically.
 Invoke-Step "Hugging Face login (optional)" {
-    $llmPython = Join-Path $root "llm-studio-backend\venv\Scripts\python.exe"
+    $llmPython = Join-Path $root "llm-studio-backend\.venv\Scripts\python.exe"
 
     if ($NonInteractive) {
         $script:StepStatus = "SKIPPED"; $script:StepDetail = "non-interactive"
@@ -377,7 +375,7 @@ foreach ($b in $readyBackends) {
     Write-Host ""
     Write-Host "  # $($b.Name)"
     Write-Host "  cd `"$(Join-Path $root $b.Name)`""
-    Write-Host "  .\venv\Scripts\Activate.ps1"
+    Write-Host "  .\.venv\Scripts\Activate.ps1"
     Write-Host "  uvicorn main:app --reload --port $($b.Port)"
 }
 
@@ -391,12 +389,12 @@ if ($frontendReady) {
 }
 
 Write-Host ""
-Write-Host "Models are not included — download them from the app's download panels on first use." -ForegroundColor DarkGray
+Write-Host 'Models are not included — download them from the app''s download panels on first use.' -ForegroundColor DarkGray
 
 $failed = @($script:Results | Where-Object { $_.Status -eq "FAILED" })
 if ($failed.Count -gt 0) {
     Write-Host ""
-    Write-Host "$($failed.Count) step(s) failed — see the messages above. Fix the cause and re-run; finished steps are skipped." -ForegroundColor Red
+    Write-Host "$($failed.Count) step(s) failed - see the messages above. Fix the cause and re-run; finished steps are skipped." -ForegroundColor Red
     exit 1
 }
 exit 0

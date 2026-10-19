@@ -138,7 +138,7 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) { $problems += "npm no
 foreach ($s in $services) {
     $dir = Join-Path $root $s.Dir
     if (-not (Test-Path $dir)) { $problems += "Folder not found: $dir"; continue }
-    if ($s.Kind -eq "python" -and -not (Test-Path (Join-Path $dir "venv\Scripts\python.exe"))) {
+    if ($s.Kind -eq "python" -and -not (Test-Path (Join-Path $dir ".venv\Scripts\python.exe"))) {
         $problems += "$($s.Label): no venv in $($s.Dir). Run setup_cpu.ps1 or setup_gpu.ps1 first."
     }
     if ($s.Kind -eq "npm" -and -not (Test-Path (Join-Path $dir "node_modules"))) {
@@ -175,7 +175,7 @@ try {
         Remove-Item $outLog, $errLog -ErrorAction SilentlyContinue
 
         if ($s.Kind -eq "python") {
-            $python   = Join-Path $dir "venv\Scripts\python.exe"
+            $python   = Join-Path $dir ".venv\Scripts\python.exe"
             $procArgs = @("-m", "uvicorn", "main:app", "--port", "$($s.Port)")
             if ($Dev) { $procArgs += "--reload" }
             $proc = Start-Process -FilePath $python -ArgumentList $procArgs -WorkingDirectory $dir `

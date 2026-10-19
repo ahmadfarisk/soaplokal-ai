@@ -42,8 +42,7 @@ $root = $PSScriptRoot
 # ---------------------------------------------------------------------------
 $backends = @(
     @{ Name = "llm-studio-backend";          Port = 8000; Optional = $false },
-    @{ Name = "stt-backend";                 Port = 8001; Optional = $false },
-    @{ Name = "stt-backend-faster-whisper";  Port = 8002; Optional = $true  }
+    @{ Name = "stt-backend-faster-whisper";  Port = 8001; Optional = $false  }
 )
 $frontendDir = Join-Path $root "frontend"
 $llamaDir    = Join-Path $root "llama.cpp"
@@ -451,7 +450,7 @@ foreach ($b in $backends) {
         continue
     }
 
-    $venvDir    = Join-Path $dir "venv"
+    $venvDir    = Join-Path $dir ".venv"
     $venvPython = Join-Path $venvDir "Scripts\python.exe"
 
     Invoke-Step "Set up $($b.Name)" {
@@ -559,8 +558,7 @@ if (Test-Path $frontendDir) {
                 if ($b.Optional -and -not (Test-Path (Join-Path $root $b.Name))) { continue }
                 switch ($b.Name) {
                     "llm-studio-backend"         { $varName = "NEXT_PUBLIC_LLM_API_URL" }
-                    "stt-backend"                { $varName = "NEXT_PUBLIC_STT_API_URL" }
-                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_FASTER_WHISPER_API_URL" }
+                    "stt-backend-faster-whisper" { $varName = "NEXT_PUBLIC_STT_API_URL" }
                 }
                 $url = Read-Default "URL for $($b.Name)" "http://localhost:$($b.Port)"
                 $lines += "$varName=$url"
@@ -576,7 +574,7 @@ if (Test-Path $frontendDir) {
 # log in once through huggingface_hub — it stores the token where every
 # HF download call picks it up automatically.
 Invoke-Step "Hugging Face login (optional)" {
-    $llmPython = Join-Path $root "llm-studio-backend\venv\Scripts\python.exe"
+    $llmPython = Join-Path $root "llm-studio-backend\.venv\Scripts\python.exe"
 
     if ($NonInteractive) {
         $script:StepStatus = "SKIPPED"; $script:StepDetail = "non-interactive"
@@ -630,7 +628,7 @@ foreach ($b in $readyBackends) {
     Write-Host ""
     Write-Host "  # $($b.Name)"
     Write-Host "  cd `"$(Join-Path $root $b.Name)`""
-    Write-Host "  .\venv\Scripts\Activate.ps1"
+    Write-Host "  .\.venv\Scripts\Activate.ps1"
     Write-Host "  uvicorn main:app --reload --port $($b.Port)"
 }
 
