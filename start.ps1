@@ -37,7 +37,7 @@ $logDir = Join-Path $root "logs"
 # ---------------------------------------------------------------------------
 $services = @(
     @{ Name = "llm"; Label = "LLM backend"; Kind = "python"; Dir = "llm-studio-backend"; Port = 8000; Url = "http://localhost:8000/docs"; Timeout = 180 },
-    @{ Name = "stt"; Label = "STT backend"; Kind = "python"; Dir = "stt-backend";        Port = 8001; Url = "http://localhost:8001/docs"; Timeout = 180 },
+    @{ Name = "stt"; Label = "STT backend"; Kind = "python"; Dir = "stt-backend-faster-whisper";        Port = 8001; Url = "http://localhost:8001/docs"; Timeout = 180 },
     @{ Name = "web"; Label = "Frontend";    Kind = "npm";    Dir = "frontend";           Port = 3000; Url = "http://localhost:3000";      Timeout = 240 }
 )
 
