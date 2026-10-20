@@ -141,7 +141,7 @@ export default function DownloadPanel({
             <button
               disabled={busy || !selectedOption}
               onClick={handleDropdownDownload}
-              className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40"
+              className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               Download
             </button>
@@ -158,41 +158,48 @@ export default function DownloadPanel({
               <option value="openvino">OpenVINO (pre-converted)</option>
             </select>
 
-            <input
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="Model ID (e.g. qwen2.5-1.5b-q4)"
-              value={freeModelId}
-              onChange={(e) => setFreeModelId(e.target.value)}
-            />
-
             {freeEngine === "llama_cpp" ? (
               <>
                 <input
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Repo ID (e.g. bartowski/Qwen2.5-1.5B-Instruct-GGUF)"
+                  placeholder="Model ID (e.g. Qwen3-4B-Instruct-2507-Q4_K_M)"
+                  value={freeModelId}
+                  onChange={(e) => setFreeModelId(e.target.value)}
+                />
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Repo ID (e.g. lmstudio-community/Qwen3-4B-Instruct-2507-GGUF)"
                   value={freeRepoId}
                   onChange={(e) => setFreeRepoId(e.target.value)}
                 />
                 <input
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  placeholder="Filename (e.g. Qwen2.5-1.5B-Instruct-Q4_K_M.gguf)"
+                  placeholder="Filename (e.g. Qwen3-4B-Instruct-2507-Q4_K_M.gguf)"
                   value={freeFilename}
                   onChange={(e) => setFreeFilename(e.target.value)}
                 />
               </>
             ) : (
-              <input
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                placeholder="Hugging Face model ID (e.g. hsuwill000/Qwen2.5-1.5B-Instruct-openvino-8bit)"
-                value={freeHfModelId}
-                onChange={(e) => setFreeHfModelId(e.target.value)}
-              />
+              <>
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Model ID (e.g. Qwen2.5-1.5B-Instruct-openvino-8bit)"
+                  value={freeModelId}
+                  onChange={(e) => setFreeModelId(e.target.value)}
+                />
+                <input
+                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Hugging Face model ID (e.g. hsuwill000/Qwen2.5-1.5B-Instruct-openvino-8bit)"
+                  value={freeHfModelId}
+                  onChange={(e) => setFreeHfModelId(e.target.value)}
+                />
+              </>
             )}
 
             <button
               disabled={busy}
               onClick={handleFreeformDownload}
-              className="self-start rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40"
+              className="self-start rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               Download
             </button>

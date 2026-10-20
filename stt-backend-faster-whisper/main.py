@@ -5,7 +5,7 @@ The FastAPI entry point for the STT backend. Routes HTTP requests
 to models_registry.py, download_service.py, and inference_service.py. 
 Run with:
 
-uvicorn main:app --reload --port 8002
+uvicorn main:app --reload --port 8001
 """
 
 
@@ -15,7 +15,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-import wave
+# import wave
 import traceback
 import numpy as np
 import time
@@ -363,6 +363,8 @@ KNOWN_HALLUCINATIONS = {
     "sampai jumpa di video selanjutnya",
     "ini adalah percakapan antara seorang dokter dan pasiennya",
     "terima kasih yang menonton",
+    "berita terkini di video ini",
+    "sekarang kita akan belajar bahasa inggris di jepang",
 }
 
 def is_hallucination(text: str) -> bool:

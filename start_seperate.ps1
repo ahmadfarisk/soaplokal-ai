@@ -2,7 +2,7 @@
 $llmBackendScript = @"
 Set-Location '$PSScriptRoot\llm-studio-backend'
 Write-Host 'Activating virtual environment...' -ForegroundColor Cyan
-.\lai012-venv\Scripts\activate
+.\.venv\Scripts\activate
 Write-Host 'Starting LLM Uvicorn server...' -ForegroundColor Cyan
 uvicorn main:app --reload --port 8000
 "@
@@ -12,7 +12,7 @@ Set-Location '$PSScriptRoot\stt-backend-faster-whisper'
 Write-Host 'Activating virtual environment...' -ForegroundColor Yellow
 .\.venv\Scripts\Activate.ps1
 Write-Host 'Starting STT Uvicorn server...' -ForegroundColor Yellow
-uvicorn main:app --reload --port 8002
+uvicorn main:app --reload --port 8001
 "@
 
 # 2. Define the commands for the Frontend terminal (e.g., install packages, run dev)

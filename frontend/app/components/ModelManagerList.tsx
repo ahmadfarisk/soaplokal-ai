@@ -86,7 +86,7 @@ export default function ModelManagerList({ title, apiUrl, onError, refreshSignal
         <button
           disabled={busy}
           onClick={refreshModels}
-          className="rounded-md border border-gray-300 text-xs px-3 py-1.5 disabled:opacity-40"
+          className="rounded-md border border-gray-300 text-xs px-3 py-1.5 disabled:opacity-40 hover:bg-gray-800"
         >
           Refresh
         </button>
