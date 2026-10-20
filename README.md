@@ -2,12 +2,12 @@
 
 
 
-# ⚠️ WARNING ⚠️
+<!-- # ⚠️ WARNING ⚠️
 ## Proyek ini masih belum selesai! Instalasi/setup (setup_cpu.ps1 dan setup_gpu.ps1) belum diuji!
 
----
+--- -->
 
-# SOAPLocal AI 🩺🤖
+# SOAPLokal AI 🩺🤖
 
 Aplikasi web berbasis kecerdasan buatan (AI) lokal yang dirancang khusus untuk mentranskripsikan percakapan antara dokter dan pasien secara *real-time* atau melalui unggahan audio, serta otomatis menghasilkan catatan medis berformat **SOAP** (*Subjective, Objective, Assessment, Plan*). 
 
@@ -62,11 +62,11 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terinstal perangkat lun
    ```
 
 2. Jalankan skrip instalasi sesuai dengan konfigurasi perangkat keras Anda (jalankan melalui PowerShell di Windows):
-   - **Untuk pengguna CPU / OpenVINO:**
+   - **Jika hanya ingin menggunakan CPU**
      ```powershell
      .\setup_cpu.ps1
      ```
-   - **Untuk pengguna GPU NVIDIA (CUDA):**
+   - **Jika ingin menggunakan GPU NVIDIA (CUDA):**
      ```powershell
      .\setup_gpu.ps1
      ```
