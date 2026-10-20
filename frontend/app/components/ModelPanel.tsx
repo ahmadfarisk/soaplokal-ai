@@ -14,7 +14,7 @@ interface ModelPanelProps {
   loadedModelId: string | null;
   onLoadedChange: (modelId: string | null) => void;
   onError: (message: string) => void;
-  showGpuToggle?: boolean;
+  // showGpuToggle?: boolean;
 }
 
 /**
@@ -29,13 +29,27 @@ export default function ModelPanel({
   loadedModelId,
   onLoadedChange,
   onError,
-  showGpuToggle,
+  // showGpuToggle,
 }: ModelPanelProps) {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("");
   const [busy, setBusy] = useState(false);
 
   const [useGpu, setUseGpu] = useState(true);
+  const [canUseGpu, setCanUseGpu] = useState(true);
+
+
+  async function handleSelectModel(selectedModel: string) {
+    // Check if it's openVINO, if yes then you can't use GPU
+    const selectedModelObj = models.find((model) => model.id === selectedModel);
+    if (selectedModelObj) {
+      if (selectedModelObj.engine) {
+        setCanUseGpu(selectedModelObj.engine != "llama_cpp" ? false : true)
+        setUseGpu(selectedModelObj.engine != "llama_cpp" ? false : true)
+      }
+    }
+    setSelectedModelId(selectedModel)
+  }
 
   async function refreshModels() {
     setBusy(true);
@@ -61,7 +75,7 @@ export default function ModelPanel({
     if (!selectedModelId) return;
     setBusy(true);
     try {
-      const query = showGpuToggle ? `?use_gpu=${useGpu}` : "";
+      const query = canUseGpu ? `?use_gpu=${useGpu}` : "";
       const res = await fetch(`${apiUrl}/models/${selectedModelId}/load${query}`, { method: "POST" });
       const data = await res.json()
       if (!res.ok) {
@@ -97,7 +111,7 @@ export default function ModelPanel({
         <select
           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-white bg-black"
           value={selectedModelId}
-          onChange={(e) => setSelectedModelId(e.target.value)}
+          onChange={(e) => handleSelectModel(e.target.value)}
         >
           <option value="">-- no model selected --</option>
           {models.map((m) => (
@@ -131,7 +145,7 @@ export default function ModelPanel({
           Unload
         </button>
         
-        {showGpuToggle && (
+        {canUseGpu && (
           <label className="flex items-center gap-1 text-xs text-gray-400">
             <input type="checkbox" checked={useGpu} onChange={(e) => setUseGpu(e.target.checked)} />
             Use GPU
