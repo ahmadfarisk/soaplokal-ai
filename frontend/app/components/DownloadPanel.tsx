@@ -116,10 +116,10 @@ export default function DownloadPanel({
   }
 
   return (
-    <details className="rounded-lg border border-gray-200 group">
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-gray-400 flex items-center justify-between">
+    <details className="rounded-lg border border-contain-border bg-main-bg group">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-text-dark flex items-center justify-between">
         {title}
-        <span className="text-gray-400 text-xs group-open:rotate-180 transition-transform">▾</span>
+        <span className="text-text-dark text-xs group-open:rotate-180 transition-transform">▾</span>
       </summary>
 
       <div className="px-4 pb-4 pt-1">
@@ -127,7 +127,7 @@ export default function DownloadPanel({
           // STT Download
           <div className="flex gap-2">
             <select
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-white bg-black"
+              className="flex-1 rounded-md border border-button-border px-3 py-2 text-sm text-text-main bg-main-bg"
               value={selectedOption}
               onChange={(e) => setSelectedOption(e.target.value)}
             >
@@ -141,16 +141,16 @@ export default function DownloadPanel({
             <button
               disabled={busy || !selectedOption}
               onClick={handleDropdownDownload}
-              className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+              className="rounded-md bg-bg-2 text-text-2 text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               Download
             </button>
           </div>
         ) : (
           // LLM Download
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 text-text-main">
             <select
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-white bg-black"
+              className="rounded-md border border-button-border px-3 py-2 text-sm text-text-main bg-main-bg"
               value={freeEngine}
               onChange={(e) => setFreeEngine(e.target.value as "llama_cpp" | "openvino")}
             >
@@ -161,19 +161,19 @@ export default function DownloadPanel({
             {freeEngine === "llama_cpp" ? (
               <>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-md border border-button-border px-3 py-2 text-sm placeholder-text-dark-2"
                   placeholder="Model ID (e.g. Qwen3-4B-Instruct-2507-Q4_K_M)"
                   value={freeModelId}
                   onChange={(e) => setFreeModelId(e.target.value)}
                 />
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-md border border-button-border px-3 py-2 text-sm placeholder-text-dark-2"
                   placeholder="Repo ID (e.g. lmstudio-community/Qwen3-4B-Instruct-2507-GGUF)"
                   value={freeRepoId}
                   onChange={(e) => setFreeRepoId(e.target.value)}
                 />
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-md border border-button-border px-3 py-2 text-sm placeholder-text-dark-2"
                   placeholder="Filename (e.g. Qwen3-4B-Instruct-2507-Q4_K_M.gguf)"
                   value={freeFilename}
                   onChange={(e) => setFreeFilename(e.target.value)}
@@ -182,13 +182,13 @@ export default function DownloadPanel({
             ) : (
               <>
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-md border border-button-border px-3 py-2 text-sm placeholder-text-dark-2"
                   placeholder="Model ID (e.g. Qwen2.5-1.5B-Instruct-openvino-8bit)"
                   value={freeModelId}
                   onChange={(e) => setFreeModelId(e.target.value)}
                 />
                 <input
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-md border border-button-border px-3 py-2 text-sm placeholder-text-dark-2"
                   placeholder="Hugging Face model ID (e.g. hsuwill000/Qwen2.5-1.5B-Instruct-openvino-8bit)"
                   value={freeHfModelId}
                   onChange={(e) => setFreeHfModelId(e.target.value)}
@@ -199,14 +199,14 @@ export default function DownloadPanel({
             <button
               disabled={busy}
               onClick={handleFreeformDownload}
-              className="self-start rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+              className="self-start rounded-md bg-bg-2 text-text-2 text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
             >
               Download
             </button>
           </div>
         )}
 
-        {status && <p className="mt-2 text-xs text-gray-500">{status}</p>}
+        {status && <p className="mt-2 text-xs text-text-dark">{status}</p>}
       </div>
     </details>
   );

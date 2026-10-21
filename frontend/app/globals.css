@@ -4,6 +4,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Color I want to use */
+  --main-bg: #000000;
+  --bg-2: #cfcae7;
+  --text-dark: #99a1af;
+  --text-dark-2: #7e7e7e;
+  --text-main: #fff;
+  --text-2: #000000;
+  --text-success: #15803D;
+  --text-fail: #9f0712;
+
+  --button-bg: #101828;
+  --button-bg-hover: #1e2939;
+  --button-border: #d1d5dc;
+
+  --contain-border: #e5e7eb;
 }
 
 @theme inline {
@@ -11,6 +27,20 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Custom Color Utilities */
+  --color-main-bg: var(--main-bg);
+  --color-bg-2: var(--bg-2);
+  --color-text-dark: var(--text-dark);
+  --color-text-dark-2: var(--text-dark-2);
+  --color-text-main: var(--text-main);
+  --color-text-2: var(--text-2);
+  --color-text-success: var(--text-success);
+  --color-text-fail: var(--text-fail);
+  --color-button-bg: var(--button-bg);
+  --color-button-bg-hover: var(--button-bg-hover);
+  --color-button-border: var(--button-border);
+  --color-contain-border: var(--contain-border);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -18,6 +48,21 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+/* Alternate Theme Override (e.g., applied via class on wrapper/body) */
+.theme-alt-light {
+  --main-bg: #ffffff;
+  --bg-2: #2f2f46;
+  --text-dark: #4c4a55;
+  --text-main: #000;
+  --text-2: #ffffff;
+  --text-success: #0fa242;
+  --text-fail: #f87171;
+  --button-bg: #dadbe7;
+  --button-bg-hover: #b8b9d1;
+  --button-border: #242539;
+  --contain-border: #ffffff;
 }
 
 body {

@@ -104,12 +104,12 @@ export default function ModelPanel({
   }
 
   return (
-    <section className="rounded-lg border border-gray-200 p-4">
-      <h2 className="text-sm font-medium text-gray-400 mb-3">{title}</h2>
+    <section className="rounded-lg border border-contain-border p-4 bg-main-bg">
+      <h2 className="text-sm font-medium text-text-dark mb-3">{title}</h2>
 
       <div className="flex gap-2 mb-3">
         <select
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-white bg-black"
+          className="flex-1 rounded-md border border-button-border px-3 py-2 text-sm text-text-main bg-main-bg"
           value={selectedModelId}
           onChange={(e) => handleSelectModel(e.target.value)}
         >
@@ -123,41 +123,44 @@ export default function ModelPanel({
         <button
           disabled={busy}
           onClick={refreshModels}
-          className="rounded-md border border-gray-300 text-sm px-4 py-2 disabled:opacity-40 hover:bg-gray-800 cursor-pointer disabled:cursor-default"
+          className="rounded-md border border-button-border text-text-main text-sm px-4 py-2 disabled:opacity-40 hover:bg-button-bg-hover cursor-pointer disabled:cursor-default"
         >
           Refresh
         </button>
       </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          disabled={busy || !selectedModelId}
-          onClick={handleLoad}
-          className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
-        >
-          Load
-        </button>
-        <button
-          disabled={busy || !loadedModelId}
-          onClick={handleUnload}
-          className="rounded-md border border-gray-300 text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
-        >
-          Unload
-        </button>
-        
-        {canUseGpu && (
-          <label className="flex items-center gap-1 text-xs text-gray-400">
-            <input type="checkbox" checked={useGpu} onChange={(e) => setUseGpu(e.target.checked)} />
-            Use GPU
-          </label>
-        )}
+      
+      <div className="flex justify-between items-center w-full">
+        <div className="flex items-center gap-2">
+          <button
+            disabled={busy || !selectedModelId}
+            onClick={handleLoad}
+            className="rounded-md bg-bg-2 text-text-2 text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+          >
+            Load
+          </button>
+          <button
+            disabled={busy || !loadedModelId}
+            onClick={handleUnload}
+            className="rounded-md border border-button-border text-text-main text-sm px-4 py-2 disabled:opacity-40 cursor-pointer disabled:cursor-default"
+          >
+            Unload
+          </button>
+          
+          {canUseGpu && (
+            <label className="flex items-center gap-2 text-xs text-text-dark mx-1">
+              <input type="checkbox" checked={useGpu} onChange={(e) => setUseGpu(e.target.checked)} />
+              Use GPU
+            </label>
+          )}
+        </div>
 
         {/* Load status */}
-        <span className={`text-xs ${loadedModelId ? "text-green-700" : "text-gray-400"}`}>
+        <span className={`text-xs ${loadedModelId ? "text-text-success" : "text-text-dark"}`}>
           {loadedModelId ? `Loaded: ${loadedModelId}` : "No model loaded"}
         </span>
 
       </div>
+
     </section>
   );
 }
