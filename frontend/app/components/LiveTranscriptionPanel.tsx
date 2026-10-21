@@ -209,7 +209,7 @@ export default function LiveTranscriptionPanel({
         onChange={(e) => onTranscriptChange(e.target.value)}
         placeholder="Live transcript will build here as you speak. Editable afterward."
         rows={6}
-        className="w-full rounded-md border border-button-border px-3 py-2 text-sm resize-none"
+        className="w-full rounded-md border border-button-border text-text-main px-3 py-2 text-sm resize-none"
       />
 
       {lastMetrics && (
