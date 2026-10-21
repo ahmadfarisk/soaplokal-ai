@@ -4,8 +4,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import DownloadPanel from "@/components/DownloadPanel";
-import ModelManagerList from "@/components/ModelManagerList";
+// import ModelManagerList from "@/components/ModelManagerList";
 import ModelPanel from "./components/ModelPanel";
+import TranscriptionPanel from "./components/TranscriptionPanel";
+import LiveTranscriptionPanel from "./components/LiveTranscriptionPanel";
 
 const STT_API_URL = process.env.NEXT_PUBLIC_FASTER_WHISPER_API_URL || "http://localhost:8001";
 const LLM_API_URL = process.env.NEXT_PUBLIC_LLM_API_URL || "http://localhost:8000";
@@ -45,6 +47,8 @@ export default function HomePage() {
 
   const [sttModelId, setSttModelId] = useState<string | null>(null);
   const [llmModelId, setLlmModelId] = useState<string | null>(null);
+
+  const [transcript, setTranscript] = useState("");
 
   function resetError() {
     setError(null)
@@ -121,10 +125,29 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-center items-center w-[80%] bg-gray-200 rounded-2xl shadow-2xl p-5">
+        <div className="flex flex-col justify-center items-center w-[80%] bg-gray-200 rounded-2xl shadow-2xl p-5 theme-alt-light">
           <p className="text-gray-950 text-2xl mb-5">
             Generasi catatan SOAP dari transkripsi percakapan
           </p>
+
+          <div className="flex gap-10 w-full">
+            <TranscriptionPanel
+              apiUrl={STT_API_URL}
+              loadedModelId={sttModelId}
+              transcript={transcript}
+              onTranscriptChange={setTranscript}
+              onError={setError}
+            />
+
+            <LiveTranscriptionPanel
+              apiUrl={STT_API_URL}
+              loadedModelId={sttModelId}
+              transcript={transcript}
+              onTranscriptChange={setTranscript}
+              onError={setError}
+            />
+          </div>
+          
 
         </div>
       </div>

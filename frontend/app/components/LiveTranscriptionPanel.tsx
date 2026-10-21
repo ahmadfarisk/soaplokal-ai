@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 
-import MetricsDisplay from "@/components/MetricsDisplay";
-import { SttMetrics, sttMetricItems } from "@/components/MetricsDisplay";
+// import MetricsDisplay from "@/components/MetricsDisplay";
+// import { SttMetrics, sttMetricItems } from "@/components/MetricsDisplay";
 
 interface LiveTranscriptionPanelProps {
   apiUrl: string;
@@ -183,25 +183,25 @@ export default function LiveTranscriptionPanel({
   }
 
   return (
-    <section className="rounded-lg border border-gray-200 p-4">
-      <h2 className="text-sm font-medium text-gray-400 mb-3">Live transcription</h2>
+    <section className="rounded-lg border border-contain-border bg-main-bg p-4 w-full">
+      <h2 className="text-sm font-medium text-text-dark mb-3">Live transcription</h2>
 
       <div className="flex items-center gap-3 mb-3">
         <button
           onClick={recording ? stopRecording : startRecording}
           disabled={finishing || (!loadedModelId && !recording)}
-          className={`rounded-md text-white text-sm px-4 py-2 disabled:opacity-40 ${
-            recording ? "bg-red-700" : "bg-gray-900"
+          className={`rounded-md text-sm px-4 py-2 disabled:opacity-40 ${
+            recording ? "bg-red-700 text-white" : "bg-bg-2 text-text-2"
           }`}
         >
           {finishing ? "Finishing…" : recording ? "Stop" : "Start"}
         </button>
-        <span className="p-2 text-xs text-gray-500">{status}</span>
+        <span className="p-2 text-xs text-text-dark-2">{status}</span>
         
       </div>
 
       {!loadedModelId && !recording && (
-        <p className="mb-3 text-xs text-gray-400">Load a speech-to-text model above to enable this.</p>
+        <p className="mb-3 text-xs text-text-dark">Load a speech-to-text model above to enable this.</p>
       )}
 
       <textarea
@@ -209,11 +209,11 @@ export default function LiveTranscriptionPanel({
         onChange={(e) => onTranscriptChange(e.target.value)}
         placeholder="Live transcript will build here as you speak. Editable afterward."
         rows={6}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm resize-none"
+        className="w-full rounded-md border border-button-border px-3 py-2 text-sm resize-none"
       />
 
       {lastMetrics && (
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-text-dark-2 mt-1">
           Last session: {lastMetrics.recordingSeconds.toFixed(1)}s recorded,{" "}
           {lastMetrics.drainSeconds.toFixed(1)}s to finish transcribing after Stop
         </p>

@@ -86,17 +86,17 @@ export default function GenerationParamsPanel({ params, onChange }: GenerationPa
   }
 
   return (
-    <details className="rounded-lg border border-gray-200 group">
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-gray-400 flex items-center justify-between">
+    <details className="rounded-lg border border-contain-border group">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-text-dark flex items-center justify-between">
         Generation parameters
-        <span className="text-gray-400 text-xs group-open:rotate-180 transition-transform">▾</span>
+        <span className="text-text-dark text-xs group-open:rotate-180 transition-transform">▾</span>
       </summary>
 
       <div className="px-4 pb-4 pt-1 space-y-4">
         {FIELDS.map((f) => (
           <div key={f.key}>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-sm text-gray-400">{f.label}</label>
+              <label className="text-sm text-text-dark">{f.label}</label>
               <input
                 type="number"
                 min={f.min}
@@ -104,7 +104,7 @@ export default function GenerationParamsPanel({ params, onChange }: GenerationPa
                 step={f.step}
                 value={params[f.key]}
                 onChange={(e) => setValue(f.key, e.target.value)}
-                className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm text-white bg-black text-right"
+                className="w-24 rounded-md border border-button-border px-2 py-1 text-sm text-text-main bg-main-bg text-right"
               />
             </div>
             <input
@@ -122,7 +122,7 @@ export default function GenerationParamsPanel({ params, onChange }: GenerationPa
 
         <button
           onClick={() => onChange(DEFAULT_GENERATION_PARAMS)}
-          className="rounded-md border border-gray-300 text-sm px-4 py-2"
+          className="rounded-md border border-button-border text-sm px-4 py-2"
         >
           Reset to defaults
         </button>

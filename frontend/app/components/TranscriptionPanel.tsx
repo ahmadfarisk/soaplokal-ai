@@ -54,28 +54,28 @@ export default function TranscriptionPanel({
   }
 
   return (
-    <section className="rounded-lg border border-gray-200 p-4">
-      <h2 className="text-sm font-medium text-gray-400 mb-3">Audio transcript</h2>
+    <section className="rounded-lg border border-contain-border bg-main-bg p-4 w-full">
+      <h2 className="text-sm font-medium text-text-dark mb-3">Audio transcript</h2>
 
       <div className="flex gap-2 mb-3">
         <input
           type="file"
           accept="audio/*"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="flex-1 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm text-black"
+          className="flex-1 text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-2 file:text-sm text-text-main file:bg-bg-2 file:text-text-2"
         />
         <button
           disabled={!file || !loadedModelId || transcribing}
           onClick={handleTranscribe}
-          className="rounded-md bg-gray-900 text-white text-sm px-4 py-2 disabled:opacity-40 whitespace-nowrap"
+          className="rounded-md bg-bg-2 text-text-2 text-sm px-4 py-2 disabled:opacity-40 whitespace-nowrap"
         >
           {transcribing ? "Transcribing…" : "Transcribe"}
         </button>
       </div>
       {!loadedModelId ? (
-        <p className="mb-3 text-xs text-gray-400">Load an STT model above before transcribing.</p>
+        <p className="mb-3 text-xs text-text-dark">Load an STT model above before transcribing.</p>
       ):(
-        <p className="mb-3 text-xs text-gray-400">Transcribe time: {transcribeTime}</p>
+        <p className="mb-3 text-xs text-text-dark">Transcribe time: {transcribeTime}</p>
       )}
 
       <textarea
@@ -83,7 +83,7 @@ export default function TranscriptionPanel({
         onChange={(e) => onTranscriptChange(e.target.value)}
         placeholder="Transcript will appear here — feel free to edit it before generating the SOAP note."
         rows={6}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm resize-none"
+        className="w-full rounded-md border border-button-border text-text-main px-3 py-2 text-sm resize-none"
       />
     </section>
   );
