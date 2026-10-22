@@ -297,9 +297,13 @@ export default function CombinedTranscriptionPanel({
         </div>
 
         <div className="w-full h-full flex flex-col gap-2">
-          <p className="text-xs text-text-dark-2">
-            {!loadedModelId && !busy ? "Load a speech-to-text model above to enable transcription." : status}
-          </p>
+          <div>
+            <p className="text-xs text-text-dark-2">
+              Status: {!loadedModelId && !busy ? "Load a speech-to-text model above to enable transcription." : status}
+            </p>
+
+            {statsText ? <p className="text-xs text-text-dark-2 mt-1">{statsText}</p> : <p className="text-xs text-text-dark-2 mt-1"></p>}
+          </div>
 
           <textarea
             value={transcript}
@@ -310,8 +314,6 @@ export default function CombinedTranscriptionPanel({
           />
         </div>
       </div>
-
-      {statsText && <p className="text-xs text-text-dark-2 mt-1">{statsText}</p>}
     </section>
   );
 }

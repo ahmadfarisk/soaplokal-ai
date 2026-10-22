@@ -6,6 +6,7 @@
   --foreground: #171717;
 
   /* Color I want to use */
+  --true-bg: #000000;
   --main-bg: #000000;
   --bg-2: #cfcae7;
   --text-dark: #99a1af;
@@ -29,6 +30,7 @@
   --font-mono: var(--font-geist-mono);
 
   /* Custom Color Utilities */
+  --color-true-bg: var(--true-bg);
   --color-main-bg: var(--main-bg);
   --color-bg-2: var(--bg-2);
   --color-text-dark: var(--text-dark);
@@ -52,6 +54,7 @@
 
 /* Alternate Theme Override (e.g., applied via class on wrapper/body) */
 .theme-alt-light {
+  --true-bg: #99a1af;
   --main-bg: #ffffff;
   --bg-2: #2f2f46;
   --text-dark: #4c4a55;

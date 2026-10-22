@@ -88,7 +88,7 @@ export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
       <div className="flex justify-between">
         <h2 className="text-sm font-medium text-text-dark mb-3">SOAP note</h2>
         <button
-          className={`text-xs ${viewRaw ? "text-green-700" : "text-text-dark"}`}
+          className={`text-xs cursor-pointers ${viewRaw ? "text-green-700" : "text-text-dark"}`}
           onClick={toggleViewRaw}
         >
           Raw Toggle
@@ -96,7 +96,7 @@ export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
       </div>
 
       {viewRaw ? 
-        <div className="space-y-4">
+        <div className="space-y-4 text-text-main">
           <p>
             {rawText}
           </p>

@@ -8,10 +8,10 @@ import DownloadPanel from "@/components/DownloadPanel";
 import ModelPanel from "./components/ModelPanel";
 // import TranscriptionPanel from "./components/TranscriptionPanel";
 // import LiveTranscriptionPanel from "./components/LiveTranscriptionPanel";
-import GenerationParamsPanel, {
+import GenerationParamsPanelPopUp, {
   DEFAULT_GENERATION_PARAMS,
   GenerationParams,
-} from "@/components/GenerationParamsPanel";
+} from "@/components/GenerationParamsPanelPopUp";
 import MetricsDisplay from "@/components/MetricsDisplay";
 import { LlmMetrics, llmMetricItems } from "@/components/MetricsDisplay";
 import CombinedTranscriptionPanel from "./components/CombinedTranscriptionPanel";
@@ -177,9 +177,9 @@ export default function HomePage() {
   return (
     <main className="flex flex-col items-center justify-start bg-gray-400 w-full min-h-screen h-fit pt-20 pb-30">
       {/* Header */}
-      <div className="flex justify-between items-center gap-8 w-full h-fit px-4 py-3 bg-white shadow text-lg tracking-wide text-gray-700 text- absolute top-0">
+      <div className="flex items-center gap-8 w-full h-fit px-4 py-3 bg-white shadow text-lg tracking-wide text-gray-700 text- absolute top-0">
         <Link href={"/"}>🩺🤖</Link>
-        {/* <Link href={"/"}>Home</Link> */}
+        <Link href={"/"}>Home</Link>
         <Link href={"/model_manage"}>Kelola Model</Link>
       </div>
 
@@ -200,7 +200,7 @@ export default function HomePage() {
 
         <section className="flex flex-col justify-center items-center w-[80%] bg-gray-200 rounded-2xl shadow-2xl p-5">
           <p className="text-gray-950 text-2xl mb-5">
-            Download dan Aktifasi model
+            Unduh dan Muat Model
           </p>
 
           <div className="flex gap-4 w-full theme-alt-light">
@@ -264,7 +264,7 @@ export default function HomePage() {
         </section>
         <section className="flex flex-col justify-center items-center w-[60%] bg-gray-200 rounded-2xl shadow-2xl p-5 theme-alt-light">
           <p className="text-gray-950 text-2xl mb-5">
-            Generasi catatan SOAP
+            Generasi Catatan SOAP
           </p>
 
           <div className="flex flex-col gap-2 w-[60%] items-center">
@@ -288,8 +288,11 @@ export default function HomePage() {
                 </p>
               )}
             </div>
-
-            <GenerationParamsPanel params={genParams} onChange={setGenParams} />
+            
+            <div className="w-fit">
+              <GenerationParamsPanelPopUp params={genParams} onChange={setGenParams} />
+            </div>
+            
 
           </div>
           
@@ -299,7 +302,7 @@ export default function HomePage() {
 
         <section className="flex flex-col justify-center items-center w-[80%] bg-gray-200 rounded-2xl shadow-2xl p-5 theme-alt-light">
           <p className="text-gray-950 text-2xl mb-5">
-            Hasil catatan SOAP
+            Hasil Catatan SOAP
           </p>
             
           <SoapNoteResult

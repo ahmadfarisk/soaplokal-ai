@@ -49,8 +49,14 @@ export default function ModelManagementPage() {
   const [sttRefreshSignal, setSttRefreshSignal] = useState(0);
 
   return (
-    <main className="min-w-4xl w-full px-4 py-10 font-sans">
-      <Link className="hover:text-green-500 text-white mb-6" href="/">Home</Link>
+    <main className="min-w-4xl w-full py-10 font-sans bg-true-bg min-h-screen pt-20 theme-alt-light">
+      {/* <Link className="hover:text-green-500 text-white mb-6" href="/">Home</Link> */}
+      {/* Header */}
+      <div className="flex items-center gap-8 w-full h-fit px-4 py-3 bg-main-bg shadow text-lg tracking-wide text-gray-700 text- absolute top-0">
+        <Link href={"/"}>🩺🤖</Link>
+        <Link href={"/"}>Home</Link>
+        <Link href={"/model_manage"}>Kelola Model</Link>
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -67,13 +73,13 @@ export default function ModelManagementPage() {
         </div>
       )}
 
-      <h1 className="text-2xl font-semibold mb-6 mx-auto w-fit">Model Management</h1>
+      <h1 className="text-2xl font-semibold mb-6 mx-auto w-fit text-text-main">Model Management</h1>
 
       
-      <div className="space-y-8 flex justify-between gap-5 min-w-5xl w-fit mx-auto">
+      <div className="space-y-8 flex justify-between gap-5 min-w-5xl w-fit mx-auto ">
         {/* --- LLM --- */}
-        <div className="space-y-3 flex flex-col gap-4 w-full">
-          <h2 className="text-base font-semibold text-gray-200">LLM models</h2>
+        <div className="space-y-3 flex flex-col gap-4 w-full items-center">
+          <h2 className="text-base font-semibold text-text-main">LLM models</h2>
           <DownloadPanel
             title="Download an LLM"
             apiUrl={LLM_API_URL}
@@ -90,8 +96,8 @@ export default function ModelManagementPage() {
         </div>
 
         {/* --- STT --- */}
-        <div className="space-y-3 flex flex-col gap-4 w-full">
-          <h2 className="text-base font-semibold text-gray-200">Speech-to-text models</h2>
+        <div className="space-y-3 flex flex-col gap-4 w-full items-center">
+          <h2 className="text-base font-semibold text-text-main">Speech-to-text models</h2>
           <DownloadPanel
             title="Download a speech-to-text model"
             apiUrl={STT_API_URL}

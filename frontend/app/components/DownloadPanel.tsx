@@ -116,7 +116,7 @@ export default function DownloadPanel({
   }
 
   return (
-    <details className="rounded-lg border border-contain-border bg-main-bg group">
+    <details className="rounded-lg border border-contain-border bg-main-bg group w-full">
       <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-text-dark flex items-center justify-between">
         {title}
         <span className="text-text-dark text-xs group-open:rotate-180 transition-transform">▾</span>
