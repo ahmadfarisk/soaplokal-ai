@@ -66,9 +66,9 @@ export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
 
   if (!rawText) {
     return (
-      <section className="rounded-lg border border-gray-200 p-4 h-auto">
-        <h2 className="text-sm font-medium text-gray-400 mb-3">SOAP note</h2>
-        <p className="text-sm text-gray-400">Generated note will appear here.</p>
+      <section className="rounded-lg border border-contain-border bg-main-bg  p-4 h-auto w-full">
+        <h2 className="text-sm font-medium text-text-dark mb-3">SOAP note</h2>
+        <p className="text-sm text-text-dark">Generated note will appear here.</p>
       </section>
     );
   }
@@ -83,12 +83,12 @@ export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
   ];
 
   return (
-    <section className="rounded-lg border border-gray-200 p-4">
+    <section className="rounded-lg border border-contain-border bg-main-bg p-4 w-full">
 
       <div className="flex justify-between">
-        <h2 className="text-sm font-medium text-gray-400 mb-3">SOAP note</h2>
+        <h2 className="text-sm font-medium text-text-dark mb-3">SOAP note</h2>
         <button
-          className={`text-xs ${viewRaw ? "text-green-700" : "text-gray-400"}`}
+          className={`text-xs ${viewRaw ? "text-green-700" : "text-text-dark"}`}
           onClick={toggleViewRaw}
         >
           Raw Toggle
@@ -106,12 +106,12 @@ export default function SoapNoteResult({ rawText }: SoapNoteResultProps) {
           {rows.map((row) => (
             <div key={row.label}>
               {/* Title/Label (eg. Subjective, Objective, etc.) */}
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-200 mb-1">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-text-main mb-1">
                 {row.label}
               </h3>
               {/* The values*/}
-              <p className="text-sm whitespace-pre-wrap text-gray-400">
-                {row.value || <span className="text-gray-100">—</span>}
+              <p className="text-sm whitespace-pre-wrap text-text-dark">
+                {row.value || <span className="text-text-dark">—</span>}
               </p>
             </div>
           ))}
