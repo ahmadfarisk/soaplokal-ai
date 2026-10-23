@@ -91,7 +91,7 @@ export default function GenerationParamsPanelPopUp({ params, onChange }: Generat
 
 
   return (
-    <div className="rounded-lg border border-button-border group w-full flex items-center justify-center">
+    <div className="rounded-lg border border-button-border group w-full h-full flex items-center justify-center">
       <button 
         className="cursor-pointer text-text-main text-center text-sm w-full h-full px-3 py-2"
         onClick={() => setPopupVisible(true)}

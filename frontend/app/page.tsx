@@ -262,55 +262,52 @@ export default function HomePage() {
           </div>
           
         </section>
-        <section className="flex flex-col justify-center items-center w-[60%] bg-gray-200 rounded-2xl shadow-2xl p-5 theme-alt-light">
+        <section className="flex flex-col justify-center items-center w-[80%] bg-gray-200 rounded-2xl shadow-2xl p-5 theme-alt-light">
           <p className="text-gray-950 text-2xl mb-5">
             Generasi Catatan SOAP
           </p>
 
-          <div className="flex flex-col gap-2 w-[60%] items-center">
 
-            <div className="p-4 w-full flex flex-col items-center">
+          <div className="mb-6 w-full flex flex-col items-center">
+
+            <div className="flex gap-2 w-[60%] items-center">
+
+              {/* Generate button */}
               <button
                 disabled={!transcript.trim() || !llmModelId || generating}
                 onClick={handleGenerate}
-                className="w-full rounded-md bg-bg-2 text-text-2 text-sm px-4 py-4 disabled:opacity-40"
+                className="w-full h-full flex-2 rounded-md bg-bg-2 border-bg-2 text-text-2 text-sm px-4 py-2 disabled:opacity-40"
               >
                 {generating ? "Generating…" : "Generate SOAP Note"}
               </button>
-              {(!transcript.trim() || !llmModelId) && (
-                <p className="mt-2 text-xs text-text-dark">
-                  Requires a transcript and a loaded LLM model.
-                </p>
-              )}
-              {(llmTime > 0) && (
-                <p className="mt-2 text-xs text-text-dark">
-                  SOAP Generated in: {llmTime}
-                </p>
-              )}
+                
+              {/* Param button */}
+              <div className="h-full flex-1">
+                <GenerationParamsPanelPopUp params={genParams} onChange={setGenParams} />
+              </div>
+              
             </div>
-            
-            <div className="w-fit">
-              <GenerationParamsPanelPopUp params={genParams} onChange={setGenParams} />
-            </div>
-            
+
+            {(!transcript.trim() || !llmModelId) && (
+              <p className="mt-2 text-xs text-text-dark">
+                Requires a transcript and a loaded LLM model.
+              </p>
+            )}
+            {(llmTime > 0) && (
+              <p className="mt-2 text-xs text-text-dark">
+                SOAP Generated in: {llmTime}
+              </p>
+            )}
 
           </div>
-          
-        </section>
 
-
-
-        <section className="flex flex-col justify-center items-center w-[80%] bg-gray-200 rounded-2xl shadow-2xl p-5 theme-alt-light">
-          <p className="text-gray-950 text-2xl mb-5">
-            Hasil Catatan SOAP
-          </p>
-            
           <SoapNoteResult
             rawText={soapNote}
           />
-
           
         </section>
+
+
 
 
 
