@@ -288,7 +288,7 @@ export default function AudioInput(props: AudioInputProps) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className={ui.cardTitle}>Audio</h2>
-          <p className={`${ui.muted} mt-0.5`}>Upload a recording, or record the consultation live.</p>
+          <p className={`${ui.muted} mt-0.5`}>Unggah rekaman, atau rekam sesi konsultasi secara langsung.</p>
         </div>
 
         <div className="inline-flex rounded-full bg-slate-100 p-1" role="tablist" aria-label="Audio source">

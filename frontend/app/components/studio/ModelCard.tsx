@@ -308,7 +308,7 @@ export default function ModelCard({
 
       <details className="group mt-5 rounded-2xl border border-slate-200 bg-slate-50">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-slate-700">
-          Download a model
+          Unduh model
           <span className="text-xs font-normal text-slate-600">
             <span className="group-open:hidden">Show</span>
             <span className="hidden group-open:inline">Hide</span>

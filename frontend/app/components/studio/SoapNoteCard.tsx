@@ -61,8 +61,8 @@ export default function SoapNoteCard({
     <section className={`${ui.card} flex flex-col`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className={ui.cardTitle}>SOAP note</h2>
-          <p className={`${ui.muted} mt-0.5`}>A draft written from the transcript.</p>
+          <h2 className={ui.cardTitle}>Catatan SOAP</h2>
+          <p className={`${ui.muted} mt-0.5`}>Draf yang ditulis berdasarkan transkrip.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button className={`${ui.secondaryButton} !px-3 !py-1.5`} onClick={() => setShowRaw((v) => !v)} disabled={!hasNote}>
@@ -85,7 +85,7 @@ export default function SoapNoteCard({
           onChange={(e) => onAutoGenerateChange(e.target.checked)}
           className="h-4 w-4 rounded border-slate-300 accent-sky-600"
         />
-        Write the note automatically after transcription
+        Tulis catatan secara otomatis setelah transkripsi
       </label>
 
       {!canGenerate && disabledReason && !generating && (

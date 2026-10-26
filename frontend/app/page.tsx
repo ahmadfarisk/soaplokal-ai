@@ -58,7 +58,7 @@ export default function HomePage() {
         <h2 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Feature</h2>
         <div className="flex gap-6 justify-center items-center w-full">
           {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/model_manage">Manage models</Link> */}
-          <Link className={ui.secondaryButton} href="/studio">Studio</Link>
+          <Link className={ui.secondaryButton} href="/studio">SOAP Note Generator Studio</Link>
           <Link className={ui.secondaryButton} href="/model_manage">Manage Model</Link>
           {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/llm">LLM</Link> */}
           {/* <Link className="hover:text-green-500 border p-3 rounded-lg" href="/llm_test">LLM Test</Link> */}

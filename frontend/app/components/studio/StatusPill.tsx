@@ -59,7 +59,7 @@ export default function StatusPill({ phase }: { phase: Phase }) {
   );
 }
 
-const STEPS = ["Capture audio", "Transcribe", "Write SOAP note"];
+const STEPS = ["Unggah atau Rekam Audio", "Transkripsi audio", "Tulis Catatan SOAP"];
 
 /** Three connected steps; the active one is highlighted, finished ones get a check. */
 export function StatusSteps({ phase }: { phase: Phase }) {

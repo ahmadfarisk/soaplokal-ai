@@ -200,9 +200,9 @@ export default function StudioPage() {
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-sky-700">Local AI Studio</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Consultation notes</h1>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Generasi catatan SOAP</h1>
             <p className="mt-2 max-w-xl text-slate-600">
-              Record or upload a consultation and get a draft SOAP note. Everything runs on this computer.
+              Rekam atau unggah hasil konsultasi dan dapatkan draf catatan SOAP.
             </p>
           </div>
           <div className="">
@@ -233,7 +233,7 @@ export default function StudioPage() {
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           <ModelCard
             title="Speech-to-text"
-            description="Turns audio into a transcript."
+            description="Mengubah audio menjadi transkrip."
             apiUrl={STT_API_URL}
             loadedModelId={sttModelId}
             onLoadedChange={setSttModelId}
@@ -243,8 +243,8 @@ export default function StudioPage() {
             locked={modelsLocked}
           />
           <ModelCard
-            title="Note writer"
-            description="Writes the SOAP note from the transcript."
+            title="Penulis catatan SOAP"
+            description="Menulis catatan SOAP berdasarkan transkrip."
             apiUrl={LLM_API_URL}
             loadedModelId={llmModelId}
             onLoadedChange={setLlmModelId}
@@ -289,7 +289,7 @@ export default function StudioPage() {
         </div>
 
         <footer className="mt-8 text-center text-xs text-slate-600">
-          Nothing leaves this computer: transcription and note writing both run locally.
+          Tidak ada data yang keluar dari komputer ini: proses transkripsi dan penulisan catatan dilakukan secara lokal.
         </footer>
       </div>
     </div>

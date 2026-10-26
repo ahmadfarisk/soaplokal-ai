@@ -40,9 +40,9 @@ export default function TranscriptCard({ transcript, onChange, readOnly, stats, 
     <section className={`${ui.card} flex flex-col`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className={ui.cardTitle}>Transcript</h2>
+          <h2 className={ui.cardTitle}>Transkrip</h2>
           <p className={`${ui.muted} mt-0.5`}>
-            {readOnly ? "Listening and transcribing..." : "You can correct mistakes before the note is written."}
+            {readOnly ? "Mendengarkan dan membuat transkrip..." : "Anda dapat memperbaiki kesalahan sebelum catatan tersebut ditulis."}
           </p>
         </div>
         <div className="flex items-center gap-2">
