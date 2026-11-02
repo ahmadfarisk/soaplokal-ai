@@ -66,10 +66,33 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terinstal perangkat lun
      ```powershell
      .\setup_cpu.ps1
      ```
+
+      Parameter:
+
+      - `-SkipLlamaCpp`
+            Jangan clone atau build berkas llama.cpp (misalnya, jika Anda hanya menggunakan model OpenVINO).
+
+      - `-RebuildLlamaCpp`
+            Build ulang berkas llama.cpp meskipun berkas llama-server.exe sudah ada.
+
+      - `-NonInteractive`
+            Terima semua pengaturan default dan lewati setiap permintaan (tanpa login ke Hugging Face).
+
    - **Jika ingin menggunakan GPU NVIDIA (CUDA):**
      ```powershell
      .\setup_gpu.ps1
      ```
+
+      Parameter:
+
+      - `-BuildFromSource`
+            Clone dan build berkas llama.cpp dengan CUDA sendiri, alih-alih mengunduh versi yang sudah dikompilasi. Diperlukan Git, CMake, Visual Studio Build Tools, dan CUDA Toolkit. (Disarankan jika tidak ada berkas llama.cpp yang sudah dikompilasi untuk versi CUDA Anda)
+
+      - `-ReinstallLlamaCpp`
+            Instal ulang file llama.cpp versi CUDA, meskipun dukungan CUDA sudah terdeteksi.
+
+      - `-NonInteractive`
+            Terima semua pengaturan default dan lewati setiap permintaan (tanpa login ke Hugging Face).
 
 ---
 

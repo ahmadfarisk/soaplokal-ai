@@ -156,7 +156,9 @@ function Get-GpuInfo {
     # The highest CUDA version the installed driver supports is in the plain nvidia-smi header
     $header = Invoke-Capture "nvidia-smi" @()
     $cudaVersion = $null
-    if ($header -match 'CUDA Version:\s*(\d+\.\d+)') { $cudaVersion = $Matches[1] }
+    # if ($header -match 'CUDA Version:\s*(\d+\.\d+)') { $cudaVersion = $Matches[1] }
+    if ($header -match 'CUDA.*?Version:\s*(\d+\.\d+)') { $cudaVersion = $Matches[1] }
+
 
     # compute_cap isn't supported by older drivers — treat anything unexpected as unknown
     $capRaw = (Invoke-Capture "nvidia-smi" @("--query-gpu=compute_cap", "--format=csv,noheader")).Trim()
