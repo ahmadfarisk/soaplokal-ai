@@ -96,7 +96,7 @@ def load_model(model_id: str, use_gpu: bool = True) -> dict:
         entry = _load_llama_cpp(model_id, local_path, GPU_LAYERS_ON if use_gpu else 0)
     # OpenVINO engine
     elif engine == "openvino":
-        entry = _load_openvino(model_id, local_path, DEFAULT_OV_DEVICE if use_gpu else "GPU")
+        entry = _load_openvino(model_id, local_path, "GPU" if use_gpu else DEFAULT_OV_DEVICE)
     else:
         raise InferenceError(f"Unknown engine '{engine}' for model '{model_id}'.")
 
