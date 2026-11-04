@@ -74,16 +74,21 @@ fi
 declare -A LOGPOS
 SVC_PIDS=()
 
-# Print whatever was appended to a log file since the last call (position is
-# remembered in LOGPOS), skipping the trailing partial line until it is done.
+# Set NEW_LINES to whatever was appended to a log file since the last call
+# (position is remembered in LOGPOS), skipping the trailing partial line until
+# it is done. Must be called in the current shell — inside <(...) or $(...)
+# it would run in a subshell and the LOGPOS update would be lost, making the
+# whole file re-scanned (and old error lines re-echoed) on every tick.
+NEW_LINES=""
 get_new_lines() {
     local file="$1"
     local pos="${LOGPOS[$file]:-0}"
     local size chunk endnl lines line partial
+    NEW_LINES=""
     [[ -f "$file" ]] || return 0
     size=$(stat -c %s "$file" 2>/dev/null) || return 0
     if (( size < pos )); then pos=0; fi          # file was truncated
-    (( pos >= size )) && return 0
+    if (( pos >= size )); then return 0; fi
     chunk=$(tail -c +$((pos + 1)) "$file" 2>/dev/null)
     [[ -n "$chunk" ]] || return 0
     endnl=$(tail -c 1 "$file" | od -An -tx1 | tr -d ' \n')
@@ -93,9 +98,13 @@ get_new_lines() {
         lines=("${lines[@]:0:$(( ${#lines[@]} - 1 ))}")   # drop partial line
         partial="${chunk##*$'\n'}"
         pos=$(( size - ${#partial} ))
+    else
+        pos=$size
     fi
     LOGPOS[$file]=$pos
-    (( ${#lines[@]} )) && printf '%s\n' "${lines[@]}"
+    if (( ${#lines[@]} > 0 )); then
+        NEW_LINES=$(printf '%s\n' "${lines[@]}")
+    fi
 }
 
 # Echo matching error lines from a service's logs (max 5 per log per tick).
@@ -106,10 +115,11 @@ show_error_lines() {
     local -a hits=()
     for f in "$LOG_DIR/$name.out.log" "$LOG_DIR/$name.err.log"; do
         hits=()
+        get_new_lines "$f"
         while IFS= read -r line; do
-            [[ "$line" =~ $ERROR_PATTERN ]] && hits+=("$line")
-        done < <(get_new_lines "$f")
-        (( ${#hits[@]} )) || continue
+            [[ -n "$line" && "$line" =~ $ERROR_PATTERN ]] && hits+=("$line")
+        done <<< "$NEW_LINES"
+        (( ${#hits[@]} > 0 )) || continue
         shown=0
         for line in "${hits[@]}"; do
             if (( shown >= 5 )); then break; fi    # don't flood the window
