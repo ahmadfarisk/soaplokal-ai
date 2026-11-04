@@ -21,6 +21,7 @@ llama.cpp/
 
 __pycache__/
 .cache/
+.pip-wheels/
 
 kernel.errors.txt
 

@@ -349,17 +349,32 @@ step_install_prebuilt_llama() {
     echo "   Looking up the latest llama.cpp release with an ubuntu CUDA 12.x x64 build..."
     local disc
     if ! disc=$(python3 - "$GPU_CUDA" <<'PY' 2>&1
-import json, re, sys, urllib.request
+import json, re, sys, time, urllib.request
 
 driver = sys.argv[1] or ""
 def ver(t): return tuple(int(x) for x in t.split("."))
 driver_v = ver(driver) if driver else None
 
-req = urllib.request.Request(
-    "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15",
-    headers={"User-Agent": "setup_linux_gpu.sh", "Accept": "application/vnd.github+json"})
-with urllib.request.urlopen(req, timeout=30) as r:
-    rels = json.load(r)
+def fetch_releases(per_page):
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page={per_page}",
+        headers={"User-Agent": "setup_linux_gpu.sh", "Accept": "application/vnd.github+json"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)
+
+# Network to GitHub can be flaky: retry a few times, starting with a small payload
+rels = None
+last_err = None
+for attempt in range(4):
+    for per_page in (5, 15):
+        try:
+            rels = fetch_releases(per_page)
+            break
+        except Exception as e:
+            last_err = e
+            time.sleep(3 * (attempt + 1))
+if rels is None:
+    raise last_err if last_err else RuntimeError("release lookup failed")
 
 pat = re.compile(r"^llama-b(\d+)-bin-ubuntu-cuda-(12\.\d+)-x64\.tar\.gz$")
 best = None
@@ -392,7 +407,7 @@ PY
             printf '%s\n' "$disc" | tail -n +2 | sed 's/^/   /'
         else
             echo -e "   ${RED}Release lookup failed (network error or rate limit).${NC}"
-            printf '%s\n' "$disc" | head -3 | sed 's/^/   /'
+            printf '%s\n' "$disc" | tail -1 | sed 's/^/   /'
         fi
         echo -e "   ${YELLOW}Try --build-from-source, or re-run later.${NC}"
         return 1
@@ -555,6 +570,82 @@ PY
     fi
 }
 
+# On flaky networks, pip can hang for minutes on a stalling connection (data trickling
+# below the read timeout). Pre-download large pinned wheels with curl — resumable
+# (-C -), and --speed-limit kills connections that stall under 1 KB/s for 2 minutes —
+# into a local wheel dir that the installer then uses via --find-links.
+pre_download_big_wheels() { # requirements_file venv_python
+    local req_file="$1" venv_py="$2"
+    local wheels_dir="$ROOT/.pip-wheels"
+    command -v curl >/dev/null 2>&1 || return 0
+    [[ -n "$venv_py" && -x "$venv_py" ]] || return 0
+    mkdir -p "$wheels_dir"
+
+    local pins
+    pins=$(grep -oE '^[A-Za-z0-9._-]+==[A-Za-z0-9.!+*-]+' "$req_file" | sed 's/-/_/g')
+    [[ -n "$pins" ]] || return 0
+
+    # Wheel tag selection must match the TARGET venv's Python, not the system python
+    local py_ver
+    py_ver=$("$venv_py" -c 'import sys; print(f"{sys.version_info[0]}{sys.version_info[1]}")' 2>/dev/null) || py_ver="312"
+
+    local pin name ver installed
+    while IFS= read -r pin; do
+        name="${pin%%==*}"; ver="${pin#*==}"
+        # Skip packages the venv already has at this exact version
+        installed=$("$venv_py" -m pip show "$name" 2>/dev/null | sed -n 's/^Version: //p' | head -1)
+        if [[ "$installed" == "$ver" ]]; then
+            continue
+        fi
+        # Ask PyPI for the best wheel URL + size for this exact version/platform
+        eval "$(python3 - "$name" "$ver" "$py_ver" <<'PY' 2>/dev/null
+import json, sys, urllib.request
+name, ver, pyver = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    req = urllib.request.Request(f"https://pypi.org/pypi/{name}/{ver}/json",
+                                 headers={"User-Agent": "setup_linux_gpu.sh"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        data = json.load(r)
+    cands = []
+    for f in data["urls"]:
+        fn = f["filename"]
+        if not fn.endswith(".whl") or "macosx" in fn or "win" in fn:
+            continue
+        tags = fn.split("-")[2:-1]
+        score = 0
+        if f"cp{pyver}" in tags:
+            score += 4
+        if "abi3" in tags:
+            score += 2
+        if "py3" in tags or "py2.py3" in tags:
+            score += 1
+        if "manylinux" in fn and "x86_64" in fn:
+            score += 2
+        cands.append((score, f["size"], f["url"], fn))
+    cands.sort(reverse=True)
+    if cands:
+        _score, size, url, fn = cands[0]
+        print(f"PRE_DL_URL={url!r}")
+        print(f"PRE_DL_SIZE={size}")
+        print(f"PRE_DL_FN={fn!r}")
+except Exception:
+    pass
+PY
+)"
+        [[ -n "${PRE_DL_URL:-}" ]] || continue
+        (( PRE_DL_SIZE >= 52428800 )) || continue   # only wheels >= 50 MB
+        dest="$wheels_dir/$PRE_DL_FN"
+        if [[ -f "$dest" ]] && (( $(stat -c %s "$dest") >= PRE_DL_SIZE )); then
+            continue
+        fi
+        echo "   Pre-downloading large wheel: $PRE_DL_FN ($(( PRE_DL_SIZE / 1024 / 1024 )) MB)"
+        curl -fL -C - -sS --retry 10 --retry-delay 2 --retry-all-errors \
+             --speed-limit 1024 --speed-time 120 -o "$dest" "$PRE_DL_URL" 2>/dev/null \
+          || echo -e "   ${YELLOW}Pre-download of $PRE_DL_FN failed; the installer will fetch it from the index.${NC}"
+    done <<< "$pins"
+    return 0
+}
+
 step_setup_backend() { # name port
     local name="$1" port="$2"
     local dir="$ROOT/$name"
@@ -581,7 +672,16 @@ step_setup_backend() { # name port
 
     # setuptools/wheel first: some packages (e.g. webrtcvad) fail to build without them
     run_checked "pip upgrade" "$venv_py" -m pip install --upgrade pip setuptools wheel || return 1
-    run_checked "pip install -r requirements.txt" "$venv_py" -m pip install -r "$requirements" || return 1
+
+    # The venv already exists at this point — pre-download large pinned wheels
+    pre_download_big_wheels "$requirements" "$venv_py"
+    export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+    if command -v uv >/dev/null 2>&1; then
+        # uv's downloader is far more resilient on flaky networks than pip
+        run_checked "uv pip install -r requirements.txt" uv pip install --python "$venv_py" --find-links "$ROOT/.pip-wheels" -r "$requirements" || return 1
+    else
+        run_checked "pip install -r requirements.txt" "$venv_py" -m pip install --find-links "$ROOT/.pip-wheels" -r "$requirements" || return 1
+    fi
 }
 
 for entry in "${BACKENDS[@]}"; do
@@ -613,7 +713,7 @@ cuDNN/CUDA versions. Consider: pip install --upgrade ctranslate2 faster-whisper$
     fi
 
     # The pinned requirements already include these; install explicitly as insurance
-    run_checked "pip install NVIDIA libraries" "$venv_py" -m pip install nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*" || return 1
+    run_checked "pip install NVIDIA libraries" "$venv_py" -m pip install --find-links "$ROOT/.pip-wheels" nvidia-cublas-cu12 "nvidia-cudnn-cu12==9.*" || return 1
 
     # Confirm the libraries actually landed in this venv
     local site_packages nvidia_dir cublas cudnn
