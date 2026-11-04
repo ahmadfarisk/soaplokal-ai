@@ -598,6 +598,7 @@ pre_download_big_wheels() { # requirements_file venv_python
             continue
         fi
         # Ask PyPI for the best wheel URL + size for this exact version/platform
+        unset PRE_DL_URL PRE_DL_SIZE PRE_DL_FN
         eval "$(python3 - "$name" "$ver" "$py_ver" <<'PY' 2>/dev/null
 import json, sys, urllib.request
 name, ver, pyver = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -828,8 +829,8 @@ for i in "${!RESULTS_STATUS[@]}"; do
 done
 
 echo ""
-echo -e "${GREEN}Next: run ./start.sh to launch everything from one terminal
-(once it exists), or run each service yourself:${NC}"
+echo -e "${GREEN}Next: run ./start.sh to launch everything from one terminal,
+or run each service yourself:${NC}"
 for entry in "${BACKENDS[@]}"; do
     b_name="${entry% *}"; b_port="${entry#* }"
     [[ -d "$ROOT/$b_name/.venv" ]] || continue

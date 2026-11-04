@@ -3,9 +3,10 @@ import time
 import ctypes
 
 
-# For GPU use — the pip nvidia-*-cu12 wheels keep their .so files in
-# site-packages/nvidia/<pkg>/lib/; _preload_nvidia_libs() below loads them
-# into the process so ctranslate2's dlopen() can find them.
+# For GPU use — the pip nvidia-*-cu12 wheels keep their CUDA libraries in
+# site-packages/nvidia/<pkg>/ (lib/*.so* on Linux, bin/*.dll on Windows);
+# _preload_nvidia_libs() below loads them into the process so ctranslate2's
+# library lookup (dlopen/LoadLibrary) can find them.
 import glob, os, site
 
 
@@ -57,9 +58,15 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def _preload_nvidia_libs() -> None:
+    # The pip nvidia-*-cu12 wheels install their CUDA libraries under
+    # site-packages/nvidia/<pkg>/ — lib/*.so* on Linux, bin/*.dll on Windows.
+    if os.name == "nt":
+        pattern = os.path.join("nvidia", "*", "bin", "*.dll")
+    else:
+        pattern = os.path.join("nvidia", "*", "lib", "lib*.so*")
     libs = sorted({
         p for sp in site.getsitepackages()
-        for p in glob.glob(os.path.join(sp, "nvidia", "*", "lib", "lib*.so*"))
+        for p in glob.glob(os.path.join(sp, pattern))
     })
     pending = list(libs)
     # A few passes: some cudnn sub-libraries depend on each other, so a
@@ -76,7 +83,12 @@ def _preload_nvidia_libs() -> None:
 
 def _try_load_lib(path: str) -> bool:
     try:
-        ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
+        if os.name == "nt":
+            # Windows: mode is ignored, and a DLL loaded by full path is found
+            # by later plain-name LoadLibrary calls (e.g. ctranslate2's).
+            ctypes.CDLL(path)
+        else:
+            ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
         return True
     except OSError:
         return False
