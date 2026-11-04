@@ -28,7 +28,12 @@ logger = logging.getLogger(__name__)
 
 # --- Configuration ---------------------------------------------------------
 
-LLAMA_SERVER_PATH = Path(__file__).parent.parent / "llama.cpp" / "build" / "bin" / "Release" / "llama-server.exe"
+# llama-server binary location differs by platform: Windows builds go to
+# build/bin/Release/llama-server.exe, the Linux prebuilt lands in build/bin/.
+if os.name == "nt":
+    LLAMA_SERVER_PATH = Path(__file__).parent.parent / "llama.cpp" / "build" / "bin" / "Release" / "llama-server.exe"
+else:
+    LLAMA_SERVER_PATH = Path(__file__).parent.parent / "llama.cpp" / "build" / "bin" / "llama-server"
 
 PORT_RANGE_START = 8100
 HEALTH_CHECK_TIMEOUT_SECONDS = 300
@@ -141,7 +146,7 @@ def get_loaded_models() -> dict:
 
 def _load_llama_cpp(model_id: str, local_path: str, gpu_layers: int) -> dict:
     if not LLAMA_SERVER_PATH.exists():
-        raise InferenceError(f"llama-server.exe not found at {LLAMA_SERVER_PATH}. Check the path.")
+        raise InferenceError(f"llama-server not found at {LLAMA_SERVER_PATH}. Check the path.")
     
     port = _find_free_port()
     logger.info(f"[{model_id}] Spawning llama-server on port {port} for {local_path}")
