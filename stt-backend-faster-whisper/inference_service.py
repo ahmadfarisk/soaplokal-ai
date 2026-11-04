@@ -1,12 +1,12 @@
 import logging
 import time
+import ctypes
 
 
-# For GPU use
+# For GPU use — the pip nvidia-*-cu12 wheels keep their .so files in
+# site-packages/nvidia/<pkg>/lib/; _preload_nvidia_libs() below loads them
+# into the process so ctranslate2's dlopen() can find them.
 import glob, os, site
-for sp in site.getsitepackages():
-  for p in glob.glob(os.path.join(sp, "nvidia", "*", "bin")):
-    os.environ["PATH"] = p + os.pathsep + os.environ["PATH"]
 
 
 
@@ -40,6 +40,49 @@ INITIAL_PROMPT = "Transkripsi konsultasi medis antara dokter dan pasien. Percaka
 LIVE_INITIAL_PROMPT = "Istilah medis dan gejala klinis: meriang, demam berdarah, DBD, demam, pusing, mual, batuk, sesak napas, nyeri dada, lemas, ruam, trombosit, tensi, tekanan darah, suhu tubuh, paracetamol, amoxicillin, ibuprofen, resep, diagnosis, anamnesis, pemeriksaan fisik, gatal."
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# cuBLAS/cuDNN preloading
+#
+# ctranslate2 dlopen()s its CUDA libraries (libcublas.so.12, libcudnn*.so.9,
+# libnvrtc.so.12 ...) by soname the first time a model runs on the GPU. The
+# pip nvidia-*-cu12 wheels install those .so files under
+# site-packages/nvidia/<pkg>/lib/, which the dynamic loader never searches
+# (LD_LIBRARY_PATH is read once at process start and can't be fixed from
+# inside the process), so the dlopen fails with:
+#   "Library libcublas.so.12 is not found or cannot be loaded"
+# Preloading them here with RTLD_GLOBAL makes the sonames already present in
+# the process, which is exactly what a later dlopen() looks for first.
+# ---------------------------------------------------------------------------
+
+def _preload_nvidia_libs() -> None:
+    libs = sorted({
+        p for sp in site.getsitepackages()
+        for p in glob.glob(os.path.join(sp, "nvidia", "*", "lib", "lib*.so*"))
+    })
+    pending = list(libs)
+    # A few passes: some cudnn sub-libraries depend on each other, so a
+    # library whose dependency isn't loaded yet only succeeds on the next pass.
+    for _ in range(4):
+        pending = [lib for lib in pending if not _try_load_lib(lib)]
+        if not pending:
+            break
+    for lib in pending:
+        logger.warning(f"Could not preload NVIDIA library {os.path.basename(lib)}")
+    if libs:
+        logger.info(f"Preloaded {len(libs) - len(pending)}/{len(libs)} NVIDIA libraries for ctranslate2")
+
+
+def _try_load_lib(path: str) -> bool:
+    try:
+        ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
+        return True
+    except OSError:
+        return False
+
+
+_preload_nvidia_libs()
 
 
 # Loaded list — same shape/intent as the OpenVINO version, just holding a
