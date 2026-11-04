@@ -45,6 +45,9 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terinstal perangkat lun
 - **Processor Intel** (diperlukan jika ingin menggunakan akselerasi OpenVINO)
 - **CUDA Toolkit** (diperlukan jika ingin menggunakan akselerasi GPU NVIDIA)
 
+> **Pengecualian — Linux dengan GPU NVIDIA (jalur prebuilt):**
+> Skrip `setup_linux_gpu.sh` memakai *prebuilt* llama.cpp CUDA, jadi **CMake, C++ compiler, dan CUDA Toolkit tidak diperlukan** — cukup driver NVIDIA terbaru sudah terpasang (cek dengan `nvidia-smi`). Python 3.10–3.12, Node.js, dan FFmpeg dicek otomatis oleh skrip; jika Python sistem Anda 3.13+, skrip menyediakan Python 3.12 lewat `uv` di level user (tanpa sudo).
+
 > **Spesifikasi Referensi Pengembangan:**
 > Aplikasi ini diuji dan dikembangkan pada perangkat dengan spesifikasi:
 > - **CPU:** Intel(R) Core(TM) i7-9750H
@@ -61,7 +64,10 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terinstal perangkat lun
    cd nama-repositori
    ```
 
-2. Jalankan skrip instalasi sesuai dengan konfigurasi perangkat keras Anda (jalankan melalui PowerShell di Windows):
+2. Jalankan skrip instalasi sesuai sistem operasi dan konfigurasi perangkat keras Anda:
+
+   ### Windows (PowerShell)
+
    - **Jika hanya ingin menggunakan CPU**
      ```powershell
      .\setup_cpu.ps1
@@ -94,15 +100,54 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terinstal perangkat lun
       - `-NonInteractive`
             Terima semua pengaturan default dan lewati setiap permintaan (tanpa login ke Hugging Face).
 
+   ### Linux / WSL (Bash)
+
+   Untuk mesin dengan GPU NVIDIA:
+
+   ```bash
+   ./setup_linux_gpu.sh
+   ```
+
+   Ini setup *one-shot* yang berdiri sendiri (tidak perlu menjalankan setup CPU dulu). Skrip akan:
+   - Memeriksa prasyarat: GPU NVIDIA + driver (via `nvidia-smi`), Python 3.10–3.12, Node.js, npm, dan FFmpeg
+   - Menyediakan Python 3.12 lewat `uv` (level user, tanpa sudo) jika Python sistem 3.13+ atau tidak ada
+   - Menginstal `llama.cpp` build CUDA — secara default dari *prebuilt* release (tanpa CMake/compiler/CUDA Toolkit)
+   - Membuat virtual environment dan memasang backend LLM, backend STT (termasuk pustaka NVIDIA cuBLAS/cuDNN untuk faster-whisper), dan `node_modules` frontend
+   - Menulis `frontend/.env.local` dan (opsional) login ke Hugging Face untuk model gated
+
+   Aman dijalankan ulang: langkah yang sudah selesai akan dilewati/disegarkan.
+
+   Parameter:
+
+   - `--build-from-source`
+            Clone dan build llama.cpp dengan CMake/CUDA sendiri, alih-alih mengunduh versi yang sudah dikompilasi. Memerlukan Git, CMake, C++ compiler, dan CUDA Toolkit. (Disarankan jika tidak ada *prebuilt* untuk versi CUDA Anda)
+
+   - `--reinstall-llama-cpp`
+            Instal ulang/build ulang llama.cpp meskipun dukungan CUDA sudah terdeteksi.
+
+   - `--non-interactive`
+            Terima semua pengaturan default dan lewati setiap permintaan (tanpa login ke Hugging Face).
+
 ---
 
 ## 🚀 Cara Menjalankan Aplikasi (Usage)
 
-1. Nyalakan aplikasi dengan menjalankan skrip berikut melalui PowerShell:
-   ```powershell
-   .\start.ps1
-   ```
-2. Buka antarmuka web melalui browser Anda.
+1. Nyalakan aplikasi dengan menjalankan skrip starter (menjalankan ketiga service — LLM backend, STT backend, dan frontend — dari satu terminal, dan menghentikan semuanya saat Ctrl+C):
+   - **Windows (PowerShell)**
+     ```powershell
+     .\start.ps1
+     ```
+   - **Linux / WSL (Bash)**
+     ```bash
+     ./start.sh
+     ```
+
+     Parameter yang tersedia di kedua skrip:
+     - `--dev` / `-Dev` — jalankan backend dengan `uvicorn --reload` (off by default, karena reload me-restart proses dan melempar model yang sedang dimuat)
+     - `--quiet` / `-Quiet` — jangan menampilkan baris error di terminal (tetap ditulis ke log)
+     - `--open-browser` / `-OpenBrowser` — buka frontend di browser default saat semuanya siap
+
+2. Buka antarmuka web melalui browser Anda (http://localhost:3000).
 3. **Mengunduh & Memilih Model:**
    - Unduh model STT dan LLM melalui menu aplikasi. 
    - *Rekomendasi Model STT:* `faster-whisper-large-v3`
